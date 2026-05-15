@@ -1,0 +1,264 @@
+---
+title: AI-Friendly File Naming Standards
+description: File naming conventions optimized for AI coding tools, ensuring predictable code generation, accurate autocomplete, and maintainable project structures.
+tags:
+  - AI Coding
+  - Best Practices
+  - Project Structure
+featured: true
+publishedAt: 2026-05-15
+---
+
+# AI-Friendly File Naming Standards
+
+File naming directly affects how AI tools interpret your project. Consistent, predictable names help AI models generate accurate imports, suggest correct files, and maintain context across your codebase.
+
+---
+
+## Why File Naming Matters for AI
+
+AI coding tools rely on file names to:
+
+- **Infer file purpose**: AI reads file names to understand what a file does
+- **Generate correct imports**: Inconsistent names lead to wrong import paths
+- **Suggest relevant files**: AI uses naming patterns to find related files
+- **Maintain context**: Clear names help AI track which files it has modified
+
+Poor naming confuses AI tools and generates incorrect code suggestions.
+
+---
+
+## Core Naming Principles
+
+### 1. Descriptive Over Generic
+
+Always prefer names that describe the file's exact purpose.
+
+### Correct
+
+```
+components/
+├── UserAuthenticationForm.tsx
+├── OrderSummaryCard.tsx
+└── PaymentMethodSelector.tsx
+```
+
+### Incorrect
+
+```
+components/
+├── Form1.tsx
+├── Card.tsx
+└── Selector.tsx
+```
+
+### 2. Consistent Casing Per File Type
+
+| File Type | Convention | Example |
+|-----------|-----------|---------|
+| React/Vue components | PascalCase | `UserProfile.tsx` |
+| Hooks | camelCase, `use` prefix | `useAuth.ts` |
+| Utilities | camelCase | `formatDate.ts` |
+| Styles | kebab-case | `user-card.module.css` |
+| Constants | UPPER_SNAKE_CASE | `API_ENDPOINTS.ts` |
+| Types/Interfaces | PascalCase | `UserTypes.ts` |
+| Pages/routes | kebab-case | `user-settings.tsx` |
+
+---
+
+## File Naming by Category
+
+### Components
+
+Name components by their rendered UI purpose.
+
+```
+components/
+├── Button.tsx
+├── ButtonGroup.tsx
+├── DataTable.tsx
+├── DataTableRow.tsx
+├── NavigationBar.tsx
+├── NavigationBarMenu.tsx
+└── SearchInput.tsx
+```
+
+### Hooks
+
+Use the `use` prefix with a descriptive noun.
+
+```
+hooks/
+├── useAuth.ts
+├── useDebouncedValue.ts
+├── useLocalStorage.ts
+├── useMediaQuery.ts
+├── usePagination.ts
+└── useWindowSize.ts
+```
+
+### Utilities
+
+Single-responsibility, verb-first names.
+
+```
+lib/
+├── formatCurrency.ts
+├── generateSlug.ts
+├── parseDate.ts
+├── validateEmail.ts
+├── sortByDate.ts
+└── truncateText.ts
+```
+
+### API / Data Layer
+
+Prefix with the data domain.
+
+```
+api/
+├── users.api.ts
+├── orders.api.ts
+├── products.api.ts
+└── payments.api.ts
+```
+
+### Types
+
+Group by domain with clear suffixes.
+
+```
+types/
+├── user.types.ts
+├── order.types.ts
+├── api.types.ts
+└── shared.types.ts
+```
+
+---
+
+## AI-Specific Naming Patterns
+
+### Prefix Signals for AI
+
+Certain prefixes signal clear intent to AI tools:
+
+```
+# State/Data
+use-          -> Hook (useAuth.ts)
+store-        -> State management (store-cart.ts)
+context-      -> React Context (context-auth.tsx)
+
+# Logic
+utils-        -> Utilities (utils-format.ts)
+helpers-      -> Helper functions (helpers-validation.ts)
+
+# UI
+page-         -> Page component (page-dashboard.tsx)
+layout-       -> Layout wrapper (layout-auth.tsx)
+widget-       -> Reusable widget (widget-activity-feed.tsx)
+
+# Data
+api-          -> API client (api-stripe.ts)
+types-        -> Type definitions (types-user.ts)
+schema-       -> Validation schema (schema-order.ts)
+mock-         -> Test data (mock-products.ts)
+```
+
+### Avoid Ambiguous Names
+
+These names provide zero context to AI tools:
+
+- `index.ts` -> hides the component name behind a folder
+- `utils.ts` -> better scoped as `utils/format.ts`
+- `helpers.ts` -> same problem, too generic
+- `common.ts` -> what is common? split by concern
+- `styles.ts` -> styles for what?
+- `config.ts` -> config for which module?
+
+---
+
+## Folder Structure Signals
+
+AI tools also read folder names for context. Use clear, flat hierarchies:
+
+```
+# AI-Friendly
+src/
+├── components/       # Reusable UI components
+├── hooks/            # Custom React hooks
+├── lib/              # Utility functions
+├── api/              # API clients
+├── types/            # TypeScript types
+├── pages/            # Route pages
+├── contexts/         # React contexts
+└── styles/           # Global styles
+
+# AI-Unfriendly
+src/
+├── _helpers/         # Underscore prefix is confusing
+├── misc/             # Misc means nothing
+├── components/old/   # Multiple versions confuse AI
+└── shared/utils/     # Deep nesting hides files
+```
+
+---
+
+## Index Files (When to Use)
+
+Index files hide meaningful names from AI. Prefer explicit imports.
+
+### Correct
+
+```tsx
+// Import is explicit
+import { Button } from '@/components/Button'
+```
+
+### Incorrect
+
+```tsx
+// Import hides the actual file
+import { Button } from '@/components/Button'
+```
+
+**Exception**: Barrel exports in library entry points are acceptable.
+
+---
+
+## Migration Checklist
+
+When renaming files for AI friendliness:
+
+- Remove `index.tsx` pattern, use explicit file names
+- Replace generic names with domain-specific ones
+- Ensure consistent casing
+- Co-locate related files with matching prefixes
+- Remove duplicate or versioned files
+- Update all imports after renaming
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating file names in this project:
+- Use PascalCase for React/Vue components
+- Use camelCase for hooks (use prefix) and utilities
+- Use kebab-case for page routes and style files
+- One clear name per file, no index.tsx pattern
+- Prefix API files with domain name
+- Name files by their single responsibility
+```
+
+---
+
+## Best Practices Summary
+
+- One clear name per file, no index.tsx pattern
+- Consistent casing per file type
+- Prefix hooks with `use`, API files with domain name
+- Avoid generic names like `utils.ts` or `helpers.ts`
+- Flat folder structures are more AI-friendly than deep nesting
+- File names should describe single responsibility
+- Use consistent naming across similar files
