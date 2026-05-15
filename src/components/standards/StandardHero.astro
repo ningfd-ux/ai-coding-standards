@@ -1,0 +1,27 @@
+---
+import TagList from "./TagList.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  tags: string[];
+  publishedAt: Date;
+}
+
+const { title, description, tags, publishedAt } = Astro.props;
+---
+
+<div class="mb-10">
+  <div class="mb-4">
+    <TagList tags={tags} />
+  </div>
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">{title}</h1>
+  <p class="text-lg text-slate-500 mb-2">{description}</p>
+  <time class="text-sm text-slate-400" datetime={publishedAt.toISOString()}>
+    {publishedAt.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })}
+  </time>
+</div>

@@ -1,0 +1,255 @@
+---
+title: React Hook Organization Best Practices
+description: Standards for structuring, naming, and organizing React hooks to produce consistent, reusable logic across your application.
+tags:
+  - React
+  - Hooks
+  - Frontend
+featured: true
+publishedAt: 2026-05-15
+---
+
+# React Hook Organization Best Practices
+
+Well-organized hooks make stateful logic reusable, testable, and predictable for both developers and AI coding tools.
+
+---
+
+## Why Hook Organization Matters
+
+Disorganized hooks cause:
+
+- Duplicate state logic across components
+- Hooks that are difficult to test in isolation
+- AI tools generating inconsistent hook patterns
+- Unclear separation between UI and business logic
+- Memory leaks from improper cleanup
+
+---
+
+## Custom Hook Naming
+
+Always start custom hooks with `use`. The name should describe what the hook does.
+
+### Correct ✅
+
+```ts
+useAuth()
+useDebounce()
+useMediaQuery()
+useLocalStorage()
+useFormValidation()
+```
+
+### Incorrect ❌
+
+```ts
+auth()           // missing "use" prefix
+getDebounce()    // not a hook convention
+validationHook() // suffix instead of prefix
+```
+
+---
+
+## Hook File Organization
+
+One hook per file. Co-locate tests. Group by domain.
+
+### Correct ✅
+
+```
+hooks/
+├── auth/
+│   ├── useAuth.ts
+│   └── useAuth.test.ts
+├── data/
+│   ├── useFetch.ts
+│   └── useFetch.test.ts
+└── ui/
+    ├── useMediaQuery.ts
+    └── useDebounce.ts
+```
+
+### Incorrect ❌
+
+```
+hooks/
+├── hooks.ts          // all hooks in one file
+├── useEverything.ts  // monolithic hook
+```
+
+---
+
+## Hook Structure
+
+A well-structured custom hook returns a consistent API shape.
+
+### Correct ✅
+
+```ts
+interface UseToggleReturn {
+  isOn: boolean
+  toggle: () => void
+  setOn: () => void
+  setOff: () => void
+}
+
+export function useToggle(initial = false): UseToggleReturn {
+  const [isOn, setIsOn] = useState(initial)
+
+  const toggle = useCallback(() => setIsOn((v) => !v), [])
+  const setOn = useCallback(() => setIsOn(true), [])
+  const setOff = useCallback(() => setIsOn(false), [])
+
+  return { isOn, toggle, setOn, setOff }
+}
+```
+
+Key patterns:
+- Explicit return type interface
+- Stable function references with `useCallback`
+- Clear state and action naming
+
+### Incorrect ❌
+
+```ts
+export function useToggle(initial = false) {
+  const [isOn, setIsOn] = useState(initial)
+  return { isOn, toggle: () => setIsOn(!isOn) } // new function every render
+}
+```
+
+---
+
+## Data Fetching Hooks
+
+Encapsulate loading, error, and data states.
+
+### Correct ✅
+
+```ts
+interface UseFetchResult<T> {
+  data: T | null
+  error: Error | null
+  isLoading: boolean
+  refetch: () => void
+}
+
+export function useFetch<T>(url: string): UseFetchResult<T> {
+  const [data, setData] = useState<T | null>(null)
+  const [error, setError] = useState<Error | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(url)
+      const result = await response.json()
+      setData(result)
+    } catch (e) {
+      setError(e as Error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [url])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  return { data, error, isLoading, refetch: fetchData }
+}
+```
+
+---
+
+## Effect Cleanup
+
+Always return cleanup functions from effects that create subscriptions.
+
+### Correct ✅
+
+```ts
+export function useEventListener(
+  target: EventTarget,
+  event: string,
+  handler: EventListener
+) {
+  useEffect(() => {
+    target.addEventListener(event, handler)
+    return () => target.removeEventListener(event, handler)
+  }, [target, event, handler])
+}
+```
+
+### Incorrect ❌
+
+```ts
+export function useEventListener(target, event, handler) {
+  useEffect(() => {
+    target.addEventListener(event, handler)
+    // missing cleanup!
+  }, [target, event, handler])
+}
+```
+
+---
+
+## Hook Composition
+
+Compose hooks from smaller hooks. Don't duplicate logic.
+
+### Correct ✅
+
+```ts
+export function useFormField(initialValue: string) {
+  const [value, setValue] = useState(initialValue)
+  const [isDirty, setIsDirty] = useState(false)
+
+  const onChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value)
+    setIsDirty(true)
+  }, [])
+
+  const reset = useCallback(() => {
+    setValue(initialValue)
+    setIsDirty(false)
+  }, [initialValue])
+
+  return { value, isDirty, onChange, reset }
+}
+
+// Compose for forms
+export function useForm<T extends Record<string, string>>(initialValues: T) {
+  const fields = {} as Record<keyof T, ReturnType<typeof useFormField>>
+  // ... compose from useFormField
+}
+```
+
+---
+
+## AI Coding Prompt Example
+
+```
+When creating React hooks:
+- Prefix all hook names with "use"
+- One hook per file, co-locate tests
+- Define explicit return type interface
+- Wrap callbacks in useCallback for stable references
+- Always return cleanup functions from effects
+- Compose complex hooks from simpler ones
+- Handle loading, error, and data states explicitly
+```
+
+---
+
+## Best Practices Summary
+
+- `use` prefix for all custom hooks
+- One hook per file, grouped by domain
+- Explicit TypeScript return types
+- Stable callbacks with `useCallback`
+- Effect cleanup for all subscriptions
+- Compose don't duplicate
+- Loading/error/data state pattern for async hooks

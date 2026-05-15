@@ -1,0 +1,220 @@
+---
+title: TypeScript Naming Conventions
+description: Best practices for consistent and scalable TypeScript naming conventions in modern frontend applications.
+tags:
+  - TypeScript
+  - Naming
+  - Frontend
+featured: true
+publishedAt: 2026-05-15
+---
+
+# TypeScript Naming Conventions
+
+Consistent naming conventions improve code readability, maintainability, and AI-assisted code generation quality.
+
+AI coding tools perform significantly better when variable names, interfaces, components, and functions follow predictable patterns.
+
+---
+
+## Why Naming Consistency Matters
+
+Inconsistent naming creates problems such as:
+
+- Reduced readability
+- Harder refactoring
+- Confusing AI-generated code
+- Duplicate abstractions
+- Poor autocomplete experience
+
+Consistent naming standards help both developers and AI tools understand project structure more effectively.
+
+---
+
+## General Naming Principles
+
+Follow these rules across the codebase:
+
+- Prefer descriptive names over short abbreviations
+- Use consistent casing for each symbol type
+- Avoid unnecessary prefixes (like `I` for interfaces)
+- Keep names predictable and intention-revealing
+- Align file names with exported symbols
+
+---
+
+## Variable Naming
+
+Use camelCase for variables and functions.
+
+### Correct ✅
+
+```ts
+const userProfile = {}
+const isAuthenticated = true
+
+function fetchUserData() {}
+```
+
+### Incorrect ❌
+
+```ts
+const User_Profile = {}
+const auth = true
+
+function GetUser() {}
+```
+
+---
+
+## Component Naming
+
+Use PascalCase for React components.
+
+### Correct ✅
+
+```tsx
+export function UserCard() {}
+export function SettingsModal() {}
+```
+
+### Incorrect ❌
+
+```tsx
+export function userCard() {}
+export function settings_modal() {}
+```
+
+---
+
+## Interface Naming
+
+Avoid the `I` prefix for interfaces. Use PascalCase.
+
+### Correct ✅
+
+```ts
+interface User {
+  id: string
+}
+```
+
+### Incorrect ❌
+
+```ts
+interface IUser {
+  id: string
+}
+```
+
+---
+
+## Type Alias Naming
+
+Use PascalCase for type aliases.
+
+### Correct ✅
+
+```ts
+type UserRole = 'admin' | 'editor' | 'viewer'
+type ApiResponse<T> = { data: T; error: null }
+```
+
+### Incorrect ❌
+
+```ts
+type userRole = 'admin' | 'editor'
+type api_response<T> = { data: T }
+```
+
+---
+
+## Enum Naming
+
+Use PascalCase for enum names and enum members.
+
+### Correct ✅
+
+```ts
+enum UserRole {
+  Admin,
+  Editor,
+  Viewer,
+}
+```
+
+### Incorrect ❌
+
+```ts
+enum user_role {
+  admin,
+  editor,
+}
+```
+
+---
+
+## File Naming Standards
+
+Use kebab-case for filenames.
+
+### Correct ✅
+
+```
+user-profile.ts
+auth-service.ts
+settings-modal.tsx
+```
+
+### Incorrect ❌
+
+```
+UserProfile.ts
+AuthService.ts
+settingsModal.tsx
+```
+
+---
+
+## Constants
+
+Use UPPER_SNAKE_CASE for module-level constants.
+
+### Correct ✅
+
+```ts
+const MAX_RETRY_COUNT = 3
+const API_BASE_URL = 'https://api.example.com'
+```
+
+### Incorrect ❌
+
+```ts
+const maxRetryCount = 3
+const apiBaseUrl = 'https://api.example.com'
+```
+
+---
+
+## AI Coding Prompt Example
+
+Use the following instruction when working with AI coding tools:
+
+```
+Follow the TypeScript naming conventions defined in this project:
+- camelCase for variables and functions
+- PascalCase for components and types
+- kebab-case for filenames
+- avoid interface prefixes like IUser
+- UPPER_SNAKE_CASE for module constants
+```
+
+---
+
+## Best Practices Summary
+
+- Use descriptive, intention-revealing names
+- Keep casing consistent per symbol type
+- Align filenames with exports
+- Avoid abbreviations unless universally understood
+- Prefer predictable patterns across the repository

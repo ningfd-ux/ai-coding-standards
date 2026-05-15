@@ -1,0 +1,21 @@
+---
+import { getCollection } from "astro:content";
+import StandardLayout from "../../layouts/StandardLayout.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("standards");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+interface Props {
+  entry: (typeof allEntries)[number];
+}
+
+const allEntries = await getCollection("standards");
+const { entry } = Astro.props as Props;
+---
+
+<StandardLayout entry={entry} allEntries={allEntries} />

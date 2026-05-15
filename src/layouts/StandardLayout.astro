@@ -1,0 +1,52 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import StandardHero from "../components/standards/StandardHero.astro";
+import TableOfContents from "../components/standards/TableOfContents.astro";
+import RelatedStandards from "../components/standards/RelatedStandards.astro";
+import AdSlot from "../components/standards/AdSlot.astro";
+import type { CollectionEntry } from "astro:content";
+import { getRelated } from "../utils/content";
+
+interface Props {
+  entry: CollectionEntry<"standards">;
+  allEntries: CollectionEntry<"standards">[];
+}
+
+const { entry, allEntries } = Astro.props;
+const { title, description, tags, publishedAt } = entry.data;
+const relatedEntries = getRelated(entry, allEntries);
+
+// Render MDX to get headings
+const { Content, headings } = await entry.render();
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+    <div class="lg:grid lg:grid-cols-[1fr_260px] lg:gap-10">
+      <!-- Main Content -->
+      <article class="min-w-0 max-w-none prose">
+        <StandardHero
+          title={title}
+          description={description}
+          tags={tags}
+          publishedAt={publishedAt}
+        />
+        <Content />
+        <AdSlot />
+        <RelatedStandards entries={relatedEntries} />
+      </article>
+
+      <!-- Sidebar: TOC + Ad -->
+      <aside class="hidden lg:block">
+        <div class="space-y-8">
+          <TableOfContents headings={headings} />
+          <div class="rounded-xl border border-slate-200 p-4 text-center text-xs text-slate-400">
+            <div class="h-40 flex items-center justify-center">
+              Advertisement
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,89 @@
+@import '@fontsource/inter';
+@import '@fontsource/jetbrains-mono';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-slate-900 font-sans;
+  }
+
+  code,
+  pre {
+    @apply font-mono;
+  }
+
+  /* Shiki code block styling */
+  pre.astro-code {
+    @apply rounded-lg border border-slate-200 p-4 text-sm leading-relaxed overflow-x-auto;
+  }
+
+  code.astro-code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 text-sm text-code;
+  }
+}
+
+@layer components {
+  .prose h1 {
+    @apply text-3xl font-bold text-slate-900 mt-12 mb-4;
+  }
+
+  .prose h2 {
+    @apply text-2xl font-bold text-slate-900 mt-10 mb-3 pb-2 border-b border-slate-200;
+  }
+
+  .prose h3 {
+    @apply text-xl font-semibold text-slate-900 mt-8 mb-3;
+  }
+
+  .prose p {
+    @apply text-slate-700 leading-relaxed mb-4;
+  }
+
+  .prose ul,
+  .prose ol {
+    @apply text-slate-700 mb-4 pl-6;
+  }
+
+  .prose li {
+    @apply mb-1;
+  }
+
+  .prose ul li {
+    @apply list-disc;
+  }
+
+  .prose ol li {
+    @apply list-decimal;
+  }
+
+  .prose a {
+    @apply text-blue-600 hover:text-blue-700 underline;
+  }
+
+  .prose strong {
+    @apply font-semibold text-slate-900;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-blue-400 bg-blue-50 px-4 py-2 my-4 text-slate-700;
+  }
+
+  .prose hr {
+    @apply my-8 border-slate-200;
+  }
+
+  .prose table {
+    @apply w-full border-collapse mb-4;
+  }
+
+  .prose th {
+    @apply border border-slate-200 bg-slate-50 px-4 py-2 text-left text-sm font-semibold;
+  }
+
+  .prose td {
+    @apply border border-slate-200 px-4 py-2 text-sm;
+  }
+}

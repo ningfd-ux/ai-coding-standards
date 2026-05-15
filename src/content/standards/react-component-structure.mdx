@@ -1,0 +1,248 @@
+---
+title: React Component Structure Standards
+description: Proven patterns for organizing React components, props, and file structure to maximize AI coding tool effectiveness.
+tags:
+  - React
+  - Components
+  - Frontend
+featured: true
+publishedAt: 2026-05-15
+---
+
+# React Component Structure Standards
+
+Well-structured React components produce more predictable AI-generated code and are easier to maintain at scale.
+
+---
+
+## Why Component Structure Matters
+
+Poor component structure leads to:
+
+- AI tools generating inconsistent component patterns
+- Props drilling that becomes unmanageable
+- Duplicate logic spread across files
+- Difficult onboarding for new developers
+- Components that are hard to test in isolation
+
+A clear structure gives AI tools a predictable template to follow.
+
+---
+
+## File Organization
+
+One component per file. Co-locate related files.
+
+### Correct ✅
+
+```
+components/
+├── UserCard/
+│   ├── UserCard.tsx
+│   ├── UserCard.test.tsx
+│   └── UserCard.module.css
+```
+
+### Incorrect ❌
+
+```
+components/
+├── UserCard.tsx        // component, styles, and types all in one
+├── UserList.tsx
+├── AllStyles.css       // global styles mixed together
+```
+
+---
+
+## Component Declaration
+
+Use named function declarations, not arrow functions or default exports.
+
+### Correct ✅
+
+```tsx
+interface UserCardProps {
+  name: string
+  role: string
+  avatarUrl?: string
+}
+
+export function UserCard({ name, role, avatarUrl }: UserCardProps) {
+  return (
+    <div className="rounded-lg border p-4">
+      <h3>{name}</h3>
+      <p>{role}</p>
+    </div>
+  )
+}
+```
+
+### Incorrect ❌
+
+```tsx
+export default ({ name, role }) => {
+  return <div>{name}</div>
+}
+```
+
+---
+
+## Props Design
+
+Keep props interfaces focused. Use discriminated unions for variants.
+
+### Correct ✅
+
+```tsx
+interface ButtonBaseProps {
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+}
+
+interface PrimaryButtonProps extends ButtonBaseProps {
+  variant: 'primary'
+  onClick: () => void
+}
+
+interface LinkButtonProps extends ButtonBaseProps {
+  variant: 'link'
+  href: string
+}
+
+type ButtonProps = PrimaryButtonProps | LinkButtonProps
+
+export function Button(props: ButtonProps) {
+  // ...
+}
+```
+
+### Incorrect ❌
+
+```tsx
+interface ButtonProps {
+  variant?: string
+  onClick?: () => void
+  href?: string
+  // unclear which props are needed when
+}
+```
+
+---
+
+## Component Composition
+
+Prefer composition over prop proliferation.
+
+### Correct ✅
+
+```tsx
+export function Card({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-lg border">{children}</div>
+}
+
+Card.Header = function CardHeader({ children }: { children: React.ReactNode }) {
+  return <div className="border-b px-4 py-3">{children}</div>
+}
+
+Card.Body = function CardBody({ children }: { children: React.ReactNode }) {
+  return <div className="p-4">{children}</div>
+}
+```
+
+Usage:
+```tsx
+<Card>
+  <Card.Header>Title</Card.Header>
+  <Card.Body>Content</Card.Body>
+</Card>
+```
+
+### Incorrect ❌
+
+```tsx
+export function Card({
+  header,
+  body,
+  footer,
+  headerClassName,
+  bodyClassName,
+}: CardProps) {
+  // 10+ props that could be composition
+}
+```
+
+---
+
+## State Management
+
+Keep state as close to where it's used as possible. Lift only when needed.
+
+### Correct ✅
+
+```tsx
+export function SearchInput() {
+  const [query, setQuery] = useState('')
+
+  return (
+    <input
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      placeholder="Search..."
+    />
+  )
+}
+```
+
+### Incorrect ❌
+
+```tsx
+// Lifting state to parent when SearchInput is the only consumer
+export function Page() {
+  const [query, setQuery] = useState('')
+  return <SearchInput query={query} setQuery={setQuery} />
+}
+```
+
+---
+
+## Event Handlers
+
+Prefix handlers with `handle`. Props callbacks with `on`.
+
+### Correct ✅
+
+```tsx
+export function Form({ onSubmit }: { onSubmit: (data: FormData) => void }) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // ...
+    onSubmit(data)
+  }
+
+  return <form onSubmit={handleSubmit}>...</form>
+}
+```
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating React components:
+- Use named function declarations with explicit Props interfaces
+- One component per file, co-locate test and style files
+- Prefer composition (compound components) over prop proliferation
+- Keep state local, lift only when shared
+- Prefix handlers with "handle", callback props with "on"
+- Use discriminated unions for component variants
+```
+
+---
+
+## Best Practices Summary
+
+- Named exports, one component per file
+- Explicit TypeScript interfaces for all props
+- Compound components for complex UIs
+- State as local as possible
+- Consistent event handler naming

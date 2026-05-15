@@ -1,0 +1,61 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const frameworks = [
+  {
+    name: "TypeScript",
+    description: "Type-safe coding standards for modern frontend and backend TypeScript projects.",
+  },
+  {
+    name: "React",
+    description: "Component architecture, hooks, and state management best practices.",
+  },
+  {
+    name: "Astro",
+    description: "Content-driven site architecture and project structure standards.",
+  },
+  {
+    name: "Tailwind CSS",
+    description: "Utility-first CSS conventions and class organization patterns.",
+  },
+  {
+    name: "Next.js",
+    description: "App Router patterns, server components, and data fetching standards.",
+  },
+  {
+    name: "Node.js",
+    description: "Backend project structure, error handling, and API design standards.",
+  },
+];
+---
+
+<BaseLayout
+  title="Frameworks"
+  description="Browse AI coding standards organized by language and framework."
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-slate-900 mb-3">Frameworks</h1>
+      <p class="text-lg text-slate-500">
+        Browse coding standards organized by language and framework.
+      </p>
+    </div>
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {frameworks.map((fw) => (
+        <div class="rounded-xl border border-slate-200 bg-white p-6 hover:border-blue-200 hover:shadow-sm transition-all">
+          <h3 class="font-semibold text-slate-900 mb-2">{fw.name}</h3>
+          <p class="text-sm text-slate-500 line-clamp-3">{fw.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-12 rounded-lg border border-slate-200 bg-slate-50 p-6 text-center">
+      <p class="text-sm text-slate-500">
+        More framework-specific standards coming soon. Browse{" "}
+        <a href="/standards" class="text-blue-600 hover:text-blue-700">all standards</a>{" "}
+        to see what's available now.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

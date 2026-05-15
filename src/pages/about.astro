@@ -1,0 +1,62 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="About"
+  description="AI Coding Standards Library provides production-ready coding standards, architecture rules, and AI-friendly engineering guidelines."
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+    <div class="mx-auto max-w-3xl">
+      <h1 class="text-3xl font-bold text-slate-900 mb-6">About AI Coding Standards</h1>
+
+      <div class="prose">
+        <p class="text-lg text-slate-500 leading-relaxed mb-8">
+          AI Coding Standards Library is a curated collection of coding standards, best practices, and
+          architecture guidelines specifically designed for the era of AI-assisted development.
+        </p>
+
+        <h2>Why This Exists</h2>
+        <p>
+          AI coding tools like Cursor, Claude Code, GitHub Copilot, and Windsurf are transforming how
+          we write software. But these tools are only as good as the context they receive. Without
+          clear, consistent standards, AI-generated code can be unpredictable, inconsistent, and
+          difficult to maintain.
+        </p>
+        <p>
+          This library provides the "context infrastructure" that AI tools need — standardized
+          patterns, naming conventions, and architecture rules that make AI-assisted development
+          reliable and production-ready.
+        </p>
+
+        <h2>What We Cover</h2>
+        <ul>
+          <li>Language-level naming conventions and code style standards</li>
+          <li>Framework-specific component and folder structure patterns</li>
+          <li>AI-safe design patterns that produce predictable outputs</li>
+          <li>Anti-patterns to avoid in AI-assisted codebases</li>
+        </ul>
+
+        <h2>What We Don't Cover</h2>
+        <p>
+          This site focuses exclusively on language and framework-level coding standards. We do not
+          cover repository governance, project management methodologies, or memory/rule orchestration
+          systems. For repository governance, check out our friends at reporules.dev.
+        </p>
+
+        <h2>How to Use</h2>
+        <p>
+          Each standard article includes ready-to-use AI prompts that you can paste directly into
+          your AI coding tool. Browse the <a href="/standards">Standards</a> section to find
+          patterns relevant to your stack.
+        </p>
+
+        <h2>Contribute</h2>
+        <p>
+          This is an open-source project. If you have a coding standard or pattern that helps your
+          AI tools produce better code, we welcome contributions via GitHub.
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

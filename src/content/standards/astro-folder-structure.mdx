@@ -1,0 +1,218 @@
+---
+title: Astro Project Folder Structure
+description: Naming conventions and organizational standards for Astro project layouts, components, and content directories.
+tags:
+  - Astro
+  - Folder Structure
+  - Frontend
+featured: true
+publishedAt: 2026-05-15
+---
+
+# Astro Project Folder Structure
+
+A well-organized Astro project structure makes content-driven sites predictable, scalable, and AI-friendly.
+
+---
+
+## Why Folder Structure Matters
+
+A clear folder structure:
+
+- Helps AI tools locate and understand project files
+- Makes content management predictable
+- Reduces import path confusion
+- Simplifies onboarding and collaboration
+- Keeps the project scalable as content grows
+
+---
+
+## Recommended Top-Level Structure
+
+```
+src/
+├── components/
+│   ├── layout/       # Header, Footer, Navigation
+│   ├── ui/           # Reusable UI primitives (shadcn, etc.)
+│   └── [domain]/     # Domain-specific components
+├── content/
+│   └── [collection]/ # Astro Content Collections
+├── layouts/          # Page-level layouts
+├── pages/            # File-based routing
+├── styles/           # Global CSS
+└── utils/            # Shared utilities
+```
+
+### Correct ✅
+
+```
+src/
+├── components/
+│   ├── layout/Header.astro
+│   ├── ui/Button.tsx
+│   └── standards/TagList.astro
+├── layouts/BaseLayout.astro
+├── pages/index.astro
+├── styles/global.css
+└── utils/content.ts
+```
+
+### Incorrect ❌
+
+```
+src/
+├── Header.astro       // mixed at root level
+├── Button.tsx
+├── index.astro
+├── styles.css
+└── all-components/    // flat dump of everything
+```
+
+---
+
+## Component Naming
+
+Use PascalCase for component files. Astro components use `.astro`, React components use `.tsx`.
+
+### Correct ✅
+
+```
+components/
+├── layout/
+│   ├── Header.astro
+│   └── Footer.astro
+├── ui/
+│   ├── Button.tsx
+│   └── Sheet.tsx
+└── standards/
+    ├── StandardHero.astro
+    └── TagList.astro
+```
+
+### Incorrect ❌
+
+```
+components/
+├── header.astro       // lowercase
+├── footer.jsx         // wrong extension
+└── taglist.tsx        // not PascalCase
+```
+
+---
+
+## Pages Organization
+
+Mirror the URL structure with your file tree.
+
+### Correct ✅
+
+```
+pages/
+├── index.astro              // /
+├── about.astro              // /about
+├── standards/
+│   ├── index.astro          // /standards
+│   └── [slug].astro         // /standards/typescript-naming
+└── frameworks/
+    └── index.astro          // /frameworks
+```
+
+---
+
+## Content Collections
+
+Group MDX/MD files by collection. Use kebab-case for filenames.
+
+### Correct ✅
+
+```
+content/
+└── standards/
+    ├── typescript-naming.mdx
+    ├── react-component-structure.mdx
+    └── astro-folder-structure.mdx
+```
+
+The filename becomes the URL slug automatically:
+- `typescript-naming.mdx` → `/standards/typescript-naming`
+
+---
+
+## Layout Structure
+
+Layouts wrap pages. Keep them in a dedicated folder.
+
+### Correct ✅
+
+```
+layouts/
+├── BaseLayout.astro    # Root layout: HTML shell + SEO + header/footer
+└── StandardLayout.astro # Detail page layout: content + sidebar
+```
+
+---
+
+## Asset Organization
+
+Static assets go in `public/`. Organize by type.
+
+### Correct ✅
+
+```
+public/
+├── images/
+│   ├── standards/
+│   └── diagrams/
+├── favicon.svg
+└── robots.txt
+```
+
+---
+
+## Import Aliases
+
+Use path aliases for clean imports.
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+```astro
+// Clean imports
+import Header from "@/components/layout/Header.astro"
+import { cn } from "@/lib/utils"
+```
+
+---
+
+## AI Coding Prompt Example
+
+```
+When working with this Astro project:
+- Astro components (.astro) in src/components/
+- React components (.tsx) in src/components/ui/
+- Pages follow file-based routing in src/pages/
+- Content in src/content/[collection]/
+- Static assets in public/
+- Use @/ path alias for all imports
+- Component files use PascalCase, content files use kebab-case
+```
+
+---
+
+## Best Practices Summary
+
+- Separate Astro, React, and content files clearly
+- Pages mirror URL structure
+- Content filenames = URL slugs (kebab-case)
+- Component files use PascalCase
+- Use `@/` path aliases for clean imports
+- Static assets organized by type in `public/`
