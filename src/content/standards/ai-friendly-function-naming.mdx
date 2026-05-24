@@ -1,0 +1,314 @@
+---
+title: AI-Friendly Function Naming Standards
+description: Function naming conventions optimized for AI coding tools, ensuring predictable code generation, accurate autocomplete, and maintainable logic across your codebase.
+tags:
+  - AI Coding
+  - Functions
+  - Best Practices
+featured: false
+publishedAt: 2026-05-18
+---
+
+# AI-Friendly Function Naming Standards
+
+Function names are the primary signal AI coding tools use to understand intent. Well-named functions produce accurate autocomplete, correct code generation, and meaningful context for AI-assisted refactoring.
+
+---
+
+## Why Function Naming Matters for AI
+
+AI coding tools interpret function names to:
+
+- **Predict return values**: A name like `getUser` signals an object return type
+- **Understand side effects**: `saveUser` vs `deleteUser` imply different behaviors
+- **Generate correct calls**: Well-named functions help AI suggest proper arguments
+- **Trace logic flow**: Descriptive names let AI track what a function does without reading its body
+- **Refactor safely**: Clear names help AI understand dependencies
+
+Poorly named functions are the #1 cause of incorrect AI-generated code.
+
+---
+
+## Core Naming Principles
+
+### 1. Verb-Noun Structure
+
+Every function name should start with a verb that describes the action, followed by the target noun.
+
+**Correct:**
+```typescript
+getUser(id)
+createOrder(items)
+updateProfile(data)
+deleteAccount(id)
+validateEmail(email)
+formatCurrency(amount)
+```
+
+**Incorrect:**
+```typescript
+user(id)               // What does it do? Get? Create? Delete?
+dataProcessor(items)   // Noun-first, unclear action
+emailValidation(email) // Noun instead of verb
+handleClick()          // Handle what? Too generic
+```
+
+### 2. Consistent Verb Prefixes
+
+Use a controlled vocabulary of prefixes for common operations. This trains AI tools to predict patterns.
+
+| Operation | Prefix | Example |
+|-----------|--------|---------|
+| Read/Get | `get` | `getUserProfile` |
+| Create | `create` | `createOrder` |
+| Update | `update` | `updateEmail` |
+| Delete | `delete` | `deleteAccount` |
+| Set | `set` | `setTheme` |
+| Fetch async | `fetch` | `fetchUserData` |
+| Check/Validate | `is`, `has`, `can`, `validate` | `isValidEmail` |
+| Transform | `to`, `format`, `parse` | `toCamelCase` |
+| Load | `load` | `loadPreferences` |
+| Save/Persist | `save` | `saveDraft` |
+
+### 3. Boolean Predicates: Start with `is`, `has`, `can`, `should`
+
+Functions returning boolean values must start with a predicate prefix.
+
+**Correct:**
+```typescript
+function isAuthenticated(user: User): boolean
+function hasPermission(role: Role): boolean
+function canEdit(doc: Document): boolean
+function shouldRetry(error: Error): boolean
+function isEmpty(arr: unknown[]): boolean
+```
+
+**Incorrect:**
+```typescript
+function checkUser(user: User): boolean      // What check result?
+function validate(): boolean                 // Validated what?
+function active(): boolean                   // Is active? Set active?
+```
+
+---
+
+## Naming by Function Category
+
+### Event Handlers
+
+Use the pattern `handle{EventName}` or `on{EventName}`.
+
+```typescript
+// Component-level handlers
+function handleSubmit(event: FormEvent) { ... }
+function handleClick(event: MouseEvent) { ... }
+function handleChange(event: ChangeEvent) { ... }
+
+// Props callbacks - use on prefix
+interface Props {
+  onSubmit: (data: FormData) => void
+  onCancel: () => void
+  onError: (error: Error) => void
+}
+```
+
+### Async Functions
+
+Prefix with `fetch` for network requests, `load` for local data.
+
+```typescript
+async function fetchUserProfile(userId: string): Promise<User>
+async function loadPreferences(): Promise<Preferences>
+async function saveDraft(content: Draft): Promise<void>
+async function uploadFile(file: File): Promise<UploadResult>
+```
+
+### Utility Functions
+
+Pure functions that transform data should describe the transformation.
+
+```typescript
+function formatCurrency(amount: number, locale: string): string
+function truncateText(text: string, maxLength: number): string
+function sortByDate<T>(items: T[], field: keyof T): T[]
+function groupBy<T>(items: T[], key: keyof T): Map<string, T[]>
+```
+
+### React Hooks
+
+Always use the `use` prefix with a descriptive noun.
+
+```typescript
+function useAuth() { ... }
+function useDebounce<T>(value: T, delay: number): T { ... }
+function useLocalStorage<T>(key: string, initial: T) { ... }
+function useMediaQuery(query: string): boolean { ... }
+```
+
+---
+
+## AI-Specific Naming Patterns
+
+### Signal Side Effects Explicitly
+
+Functions with side effects should indicate this in their name.
+
+```typescript
+// Mutating functions
+function updateUserInCache(user: User): void
+function appendToLog(message: string): void
+function resetFormFields(): void
+
+// Pure functions (no side effects implied)
+function calculateTotal(items: Item[]): number
+function formatDate(date: Date): string
+function validateInput(input: string): ValidationResult
+```
+
+### Length and Precision
+
+AI tools perform better with longer, more precise function names.
+
+```typescript
+// AI-Friendly (descriptive)
+function getActiveUserByEmail(email: string): User | null
+function calculateOrderTotalWithTax(items: Item[], taxRate: number): number
+function formatRelativeTimeFromNow(date: Date): string
+
+// AI-Unfriendly (ambiguous)
+function getData(email: string): User | null
+function calc(items: Item[], rate: number): number
+function time(date: Date): string
+```
+
+### Avoid Abbreviations
+
+Abbreviations force AI tools to guess or hallucinate the full meaning.
+
+```typescript
+// ✅ Full words
+function getUserConfiguration(): Config
+function initializeDatabaseConnection(): void
+function validateEmailAddress(email: string): boolean
+
+// ❌ Abbreviations
+function getUserCfg(): Config
+function initDBConn(): void
+function valEmail(email: string): boolean
+```
+
+---
+
+## Function Parameter Naming
+
+Parameter names are equally important for AI code generation.
+
+### Destructured Parameters
+
+Use explicit property names that describe the data.
+
+```typescript
+// ✅ AI-Friendly
+function createUser({
+  email,
+  password,
+  displayName
+}: CreateUserParams): User
+
+// ❌ AI-Unfriendly
+function createUser({
+  a,
+  b,
+  c
+}: CreateUserParams): User
+```
+
+### Callback Parameters
+
+Name callbacks by their role in the operation.
+
+```typescript
+function fetchData(
+  onSuccess: (data: Data) => void,
+  onError: (error: Error) => void,
+  onProgress: (percent: number) => void
+): void
+```
+
+---
+
+## Common Mistakes
+
+### Mistake 1: Generic `process` or `handle`
+
+These names tell AI nothing about what the function does.
+
+```typescript
+// ❌ Ambiguous
+function process(data: unknown): unknown
+function handle(event: Event): void
+function doStuff(): void
+
+// ✅ Specific
+function processPayment(payment: Payment): PaymentResult
+function handleFormSubmit(event: FormEvent): void
+```
+
+### Mistake 2: Oversharing Implementation Details
+
+Names should describe what, not how.
+
+```typescript
+// ❌ Implementation leak
+function getUserFromLocalStorage(): User | null
+function saveDataUsingApi(data: Data): void
+
+// ✅ Intent-focused
+function getCachedUser(): User | null
+function saveData(data: Data): void
+```
+
+### Mistake 3: Inconsistent Prefixes
+
+Using different prefixes for the same operation confuses AI.
+
+```typescript
+// ❌ Inconsistent
+getUser()
+retrieveOrder()    // Why not getOrder?
+fetchProducts()    // Why not getProducts?
+
+// ✅ Consistent
+getUser()
+getOrder()
+getProducts()
+```
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating functions in this project:
+- Use verb-noun structure: getX, createX, updateX, deleteX
+- Use predicate prefixes for booleans: isX, hasX, canX, shouldX
+- Use handleX for event handlers, onX for callback props
+- Use fetchX for async network calls, loadX for local data
+- Avoid abbreviations - use full words
+- Prefer longer, more descriptive names over short ambiguous ones
+- Use useX prefix for React hooks
+- Name parameters and destructured properties explicitly
+```
+
+---
+
+## Best Practices Summary
+
+- Verb-noun structure for all functions
+- Controlled vocabulary for prefixes (get, create, update, delete)
+- Boolean predicates start with is, has, can, should
+- Event handlers use handleX or onX pattern
+- Full words, never abbreviations
+- Explicit side-effect signals in function names
+- Longer descriptive names over short ambiguous ones
+- Consistent prefixes across similar operations

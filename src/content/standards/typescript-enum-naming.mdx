@@ -1,0 +1,301 @@
+---
+title: TypeScript Enum Naming Standards
+description: Consistent naming conventions for TypeScript enums, ensuring predictable code generation and maintainable type-safe constants across your project.
+tags:
+  - TypeScript
+  - Enum
+  - Naming
+featured: false
+publishedAt: 2026-05-18
+---
+
+# TypeScript Enum Naming Standards
+
+Enums are a powerful TypeScript feature, but inconsistent naming patterns confuse both developers and AI coding tools. Clear enum naming standards ensure predictable generated code and maintainable type-safe constants.
+
+---
+
+## Why Enum Naming Matters
+
+Poorly named enums cause:
+
+- AI tools generating incorrect enum member references
+- Confusion between enum types and their member values
+- Inconsistent casing that breaks linting rules
+- Difficulty distinguishing enums from regular objects
+- Import ambiguity when multiple enums share similar names
+
+---
+
+## Core Naming Rules
+
+### 1. PascalCase for Enum Names
+
+Enum type names always use PascalCase to distinguish them from variables and functions.
+
+**Correct:**
+```typescript
+enum UserRole { ... }
+enum HttpStatus { ... }
+enum PaymentMethod { ... }
+enum SortDirection { ... }
+```
+
+**Incorrect:**
+```typescript
+enum userRole { ... }      // camelCase for a type name
+enum http_status { ... }   // snake_case for a type name
+enum HTTPSTATUS { ... }     // UPPER_CASE for a type name
+```
+
+### 2. PascalCase for Enum Members
+
+Use PascalCase for enum members, not UPPER_SNAKE_CASE. This is the TypeScript recommended convention.
+
+**Correct:**
+```typescript
+enum UserRole {
+  Admin,
+  Editor,
+  Viewer,
+  Guest
+}
+```
+
+**Incorrect:**
+```typescript
+enum UserRole {
+  ADMIN,      // UPPER_CASE - looks like a constant, not an enum member
+  EDITOR,
+  VIEWER,
+  GUEST
+}
+```
+
+### 3. Singular Nouns for Enum Names
+
+Enum names should be singular since each value represents a single member of the set.
+
+**Correct:**
+```typescript
+enum Status { Active, Inactive, Pending }
+enum Category { Tech, Finance, Health }
+enum Theme { Light, Dark, System }
+```
+
+**Incorrect:**
+```typescript
+enum Statuses { Active, Inactive, Pending }    // Plural
+enum Categories { Tech, Finance, Health }       // Plural
+```
+
+---
+
+## String vs Numeric Enums
+
+### Numeric Enums
+
+Use when the actual numeric value has no meaning - the member names are the API.
+
+```typescript
+enum Priority {
+  Low,
+  Medium,
+  High,
+  Critical
+}
+// Priority.Low = 0, Priority.Medium = 1, etc.
+```
+
+### String Enums
+
+Use when the value must be serialized (API responses, localStorage) or when debugging clarity matters.
+
+```typescript
+enum HttpStatus {
+  Ok = "OK",
+  NotFound = "NOT_FOUND",
+  InternalError = "INTERNAL_ERROR",
+  BadRequest = "BAD_REQUEST"
+}
+```
+
+String enum values use UPPER_SNAKE_CASE to signal serialized wire format.
+
+---
+
+## Const Enums
+
+Use `const enum` for zero-runtime-overhead constants consumed within the same project.
+
+```typescript
+const enum Direction {
+  Up,
+  Down,
+  Left,
+  Right
+}
+```
+
+**Avoid `const enum` in library code** - they break when consumed as external modules. Use regular enums or union types instead.
+
+```typescript
+// ❌ Library export - breaks consumers
+export const enum Theme { Light, Dark }
+
+// ✅ Library export - works everywhere
+export enum Theme { Light, Dark }
+```
+
+---
+
+## When to Use Enum vs Union Type
+
+| Scenario | Use Enum | Use Union Type |
+|----------|----------|----------------|
+| Values have auto-incrementing numeric IDs | ✅ | ❌ |
+| Values need runtime iteration | ✅ | ❌ |
+| Values come from external API as strings | ❌ | ✅ |
+| Values are small and stable | ❌ | ✅ |
+| Library API - avoid runtime overhead | ❌ | ✅ |
+| Need reverse mapping (value -> name) | ✅ | ❌ |
+
+```typescript
+// ✅ Enum - stable set with numeric IDs
+enum StatusCode {
+  Success,
+  Pending,
+  Failed
+}
+
+// ✅ Union type - small, stable, serializable
+type SortOrder = "asc" | "desc"
+
+// ❌ Avoid enum when a union would work
+enum Color { Red = "red", Green = "green", Blue = "blue" }
+// Better as:
+type Color = "red" | "green" | "blue"
+```
+
+---
+
+## Enum File Organization
+
+Place related enums in dedicated type files or co-located with their usage module.
+
+### By Domain (Recommended)
+
+```
+types/
+  user.types.ts        -> UserRole, AccountStatus, SubscriptionTier
+  order.types.ts       -> OrderStatus, PaymentMethod, ShippingMethod
+  api.types.ts         -> HttpStatus, ApiErrorCode, ContentType
+```
+
+### Co-located
+
+```
+features/
+  billing/
+    billing.types.ts   -> InvoiceStatus, BillingCycle, PaymentGateway
+    BillingForm.tsx
+```
+
+### Incorrect
+
+```
+types/
+  enums.ts             // Single file with every enum - hard for AI to find
+```
+
+---
+
+## Naming Patterns for Related Enums
+
+### Flag Enums (bit flags)
+
+Use descriptive member names that compose naturally.
+
+```typescript
+enum Permission {
+  None = 0,
+  Read = 1 << 0,
+  Write = 1 << 1,
+  Delete = 1 << 2,
+  Admin = Read | Write | Delete
+}
+```
+
+### State Machine Enums
+
+Use past-tense verb for states, present-tense for actions.
+
+```typescript
+enum OrderState {
+  Created,
+  Confirmed,
+  Shipped,
+  Delivered,
+  Cancelled,
+  Returned
+}
+```
+
+---
+
+## Common Mistakes
+
+### Mistake 1: Heterogeneous Values
+
+Mixing string and numeric values in the same enum.
+
+```typescript
+// ❌ Confusing - mixed types
+enum Status { Active = 1, Inactive = "inactive" }
+
+// ✅ Consistent - all string
+enum Status { Active = "ACTIVE", Inactive = "INACTIVE" }
+```
+
+### Mistake 2: Computed Values
+
+Avoid computed values - they break AI tool autocomplete and reverse mapping.
+
+```typescript
+// ❌ AI can't predict the value
+enum Size { Small = 10, Medium = 20, Large = Small + Medium }
+
+// ✅ Static values
+enum Size { Small = 10, Medium = 20, Large = 30 }
+```
+
+### Mistake 3: Unused Enums
+
+Each enum should be imported and used in at least two places. Single-use enums should be union types.
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating TypeScript enums in this project:
+- Use PascalCase for enum type names and enum members
+- Use singular nouns for enum names
+- Prefer string enums for serialized values with UPPER_SNAKE_CASE values
+- Prefer union types for small (3-5 values), stable sets
+- Group related enums in domain-specific type files
+- Avoid const enum in shared library code
+- Avoid heterogeneous values and computed members
+```
+
+---
+
+## Best Practices Summary
+
+- PascalCase for enum names and members
+- Singular nouns for enum names
+- String enums with UPPER_SNAKE_CASE for serialized values
+- Union types for small stable sets
+- Group enums by domain in dedicated type files
+- Avoid const enum in public library APIs
+- Document enum semantics with JSDoc comments

@@ -20,7 +20,7 @@ Each week = Mon (Core) + Wed (Framework) + Fri (AI-Friendly)
 |------|-----|-----|-----|
 | W1 | [x] TypeScript Naming Conventions | [x] React Component Structure Standards | [x] AI-Friendly File Naming Standards |
 | W2 | [x] React Hook Organization Best Practices | [x] Tailwind Utility Class Standards | [ ] AI Readable Component Naming |
-| W3 | [x] Astro Folder Structure Standards | [ ] TypeScript Enum Naming Standards | [ ] AI-Friendly Function Naming |
+| W3 | [x] Astro Folder Structure Standards | [x] TypeScript Enum Naming Standards | [x] AI-Friendly Function Naming |
 | W4 | [ ] React Props Interface Standards | [ ] Tailwind Responsive Breakpoint Standards | [ ] AI Maintainable Component Structure |
 
 ## Month 2: React Deepening
