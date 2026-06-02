@@ -1,0 +1,288 @@
+---
+title: Tailwind Responsive Breakpoint Standards
+description: Consistent patterns for using Tailwind CSS responsive breakpoints across components, ensuring predictable responsive behavior for developers and AI tools.
+tags:
+  - Tailwind CSS
+  - Responsive Design
+  - Frontend
+featured: true
+publishedAt: 2026-06-01
+---
+
+# Tailwind Responsive Breakpoint Standards
+
+Consistent breakpoint usage is essential for maintainable responsive design. Standardized patterns help AI tools generate correct responsive variants and prevent layout inconsistencies across screen sizes.
+
+---
+
+## Why Breakpoint Standards Matter
+
+Inconsistent breakpoint usage causes:
+
+- AI tools generating mismatched responsive variants
+- Layouts that break at unexpected viewport sizes
+- Duplicate or conflicting responsive rules
+- Difficult debugging across device sizes
+- Unpredictable mobile-first behavior
+
+A clear breakpoint strategy ensures AI-generated responsive code works correctly across all devices.
+
+---
+
+## Default Tailwind Breakpoints
+
+Tailwind's default breakpoints follow a mobile-first approach.
+
+| Breakpoint | Min-Width | Target Devices |
+|-----------|-----------|----------------|
+| sm | 640px | Large phones (landscape) |
+| md | 768px | Tablets |
+| lg | 1024px | Small laptops / tablets (landscape) |
+| xl | 1280px | Desktops |
+| 2xl | 1536px | Large desktops |
+
+### Mobile-First Principle
+
+Always start with the base (mobile) style, then add responsive overrides.
+
+```tsx
+// Correct - mobile-first
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  {items.map(item => <Card key={item.id} {...item} />)}
+</div>
+
+// Incorrect - desktop-first
+<div className="grid grid-cols-4 xl:grid-cols-3 lg:grid-cols-2 gap-4">
+  {items.map(item => <Card key={item.id} {...item} />)}
+</div>
+```
+
+---
+
+## Responsive Variant Order
+
+Always order responsive variants from smallest to largest viewport.
+
+```tsx
+// Correct - smallest to largest
+<div className="text-sm md:text-base lg:text-lg xl:text-xl">
+  Responsive text
+</div>
+
+// Incorrect - random order
+<div className="lg:text-lg text-sm xl:text-xl md:text-base">
+  Responsive text
+</div>
+```
+
+### Grouping by Property
+
+Keep related responsive variants close together.
+
+```tsx
+// Correct - grouped by property
+<div className="
+  p-4 md:p-6 lg:p-8
+  text-sm md:text-base
+  gap-2 md:gap-4
+">
+  Content
+</div>
+
+// Incorrect - interleaved properties
+<div className="
+  p-4
+  text-sm
+  md:p-6
+  md:text-base
+  gap-2
+  lg:p-8
+">
+  Content
+</div>
+```
+
+---
+
+## Custom Breakpoints
+
+### When to Add Custom Breakpoints
+
+Only add custom breakpoints when the default set does not cover your design needs.
+
+```js
+// tailwind.config.js
+export default {
+  theme: {
+    extend: {
+      screens: {
+        'xs': '480px',
+        '3xl': '1920px',
+      }
+    }
+  }
+}
+```
+
+### Naming Convention
+
+Follow Tailwind's size-based naming.
+
+```js
+// Correct
+screens: {
+  'xs': '480px',
+  '3xl': '1920px',
+}
+
+// Incorrect - semantic names
+screens: {
+  'phone': '480px',
+  'tablet': '768px',
+  'desktop': '1024px',
+  'wide': '1920px',
+}
+```
+
+---
+
+## Layout Patterns
+
+### Responsive Grid
+
+```tsx
+<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+  {items.map(item => <MiniCard key={item.id} {...item} />)}
+</div>
+
+// Sidebar + main layout
+<div className="flex flex-col lg:flex-row gap-6">
+  <aside className="w-full lg:w-64 xl:w-72 shrink-0">
+    Sidebar
+  </aside>
+  <main className="flex-1 min-w-0">
+    Main content
+  </main>
+</div>
+```
+
+### Responsive Typography
+
+```tsx
+<h1 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold">
+  Page Title
+</h1>
+
+<p className="text-sm md:text-base leading-relaxed">
+  Article content adjusts across devices.
+</p>
+```
+
+### Responsive Spacing
+
+```tsx
+<div className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+  Content with responsive gutters
+</div>
+
+<section className="py-8 md:py-12 lg:py-16">
+  Section spacing
+</section>
+```
+
+---
+
+## Common Patterns
+
+### Responsive Visibility
+
+```tsx
+<div className="hidden md:block">Desktop-only content</div>
+<div className="block md:hidden">Mobile-only content</div>
+```
+
+### Responsive Navigation
+
+```tsx
+<nav>
+  <ul className="hidden md:flex md:gap-6">
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+  <button className="md:hidden">
+    <HamburgerIcon />
+  </button>
+</nav>
+```
+
+### Responsive Tables
+
+```tsx
+<div className="overflow-x-auto md:overflow-x-visible">
+  <table className="min-w-full">
+    ...
+  </table>
+</div>
+```
+
+---
+
+## Advanced Patterns
+
+### Container Queries
+
+```tsx
+<div className="@container">
+  <div className="grid grid-cols-1 @md:grid-cols-2 @lg:grid-cols-3 gap-4">
+    {cards.map(card => <Card key={card.id} {...card} />)}
+  </div>
+</div>
+```
+
+### Responsive Gap with Flex Wrap
+
+```tsx
+<div className="flex flex-wrap gap-2 md:gap-4 lg:gap-6">
+  {tags.map(tag => <Tag key={tag} label={tag} />)}
+</div>
+```
+
+---
+
+## Common Mistakes
+
+- **Using max- prefix unnecessarily** - mobile-first means min-width by default
+- **Missing base (mobile) styles** - always define the un-prefixed version first
+- **Too many custom breakpoints** - stick to Tailwind defaults unless clearly needed
+- **Responsive order mismatch** - always smallest to largest
+- **Applying hidden without alternative** - pair hidden with block for the other breakpoint
+- **Using lg:flex without flex base** - flex only applies at lg and above
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating responsive Tailwind classes in this project:
+- Use mobile-first approach (base styles = mobile, prefixed = larger screens)
+- Order responsive variants from smallest to largest: base, sm, md, lg, xl, 2xl
+- Group responsive variants by CSS property
+- Use default Tailwind breakpoints (sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px)
+- Prefer hidden md:block / block md:hidden for responsive visibility
+- Use flex-col lg:flex-row for responsive layout direction changes
+- Apply min-w-0 on flex children to prevent overflow
+- Start grid columns at 1 or 2 on mobile, scale up with breakpoints
+```
+
+---
+
+## Best Practices Summary
+
+- Mobile-first: base styles are for mobile, prefixed variants override upward
+- Order breakpoints smallest to largest in class strings
+- Group responsive variants by property for readability
+- Stick to Tailwind defaults - add custom breakpoints sparingly
+- Use hidden / block pairs for responsive visibility
+- Container queries for component-level responsive behavior
+- Keep responsive patterns consistent across similar components
+- Test at every breakpoint boundary, not just common device sizes

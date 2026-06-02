@@ -1,0 +1,287 @@
+---
+title: AI Maintainable Component Structure
+description: Patterns for structuring React components so AI coding tools can understand, modify, and extend them reliably without breaking existing functionality.
+tags:
+  - AI Coding
+  - React
+  - Best Practices
+featured: true
+publishedAt: 2026-06-01
+---
+
+# AI Maintainable Component Structure
+
+AI coding tools need predictable component structures to generate reliable modifications. Components organized for AI readability reduce errors during automated edits and make human-AI collaboration smoother.
+
+---
+
+## Why AI Maintainable Structure Matters
+
+Components not optimized for AI editing cause:
+
+- AI tools making changes in the wrong section of a file
+- Generated code that breaks existing logic due to misplaced additions
+- Difficulty maintaining context in long component files
+- Hallucinated imports or duplicate logic
+- Breaking changes when AI misidentifies the editing target
+
+Predictable structure gives AI tools clear boundaries for safe code generation.
+
+---
+
+## The Predictable Component Template
+
+Every component should follow a consistent order of sections.
+
+```tsx
+// 1. Imports
+import { useState, useCallback } from 'react'
+import type { ComponentPropsWithoutRef } from 'react'
+import { formatDate } from '@/lib/formatDate'
+import { Button } from '@/components/ui/Button'
+import styles from './EventCard.module.css'
+
+// 2. Types
+interface EventCardProps {
+  title: string
+  date: string
+  attendees: number
+  onRegister: (eventId: string) => void
+}
+
+// 3. Constants
+const MAX_ATTENDEES = 500
+const REGISTRATION_DEADLINE_DAYS = 7
+
+// 4. Helper functions
+function isEventFull(attendees: number): boolean {
+  return attendees >= MAX_ATTENDEES
+}
+
+// 5. Component declaration
+export function EventCard({
+  title,
+  date,
+  attendees,
+  onRegister,
+}: EventCardProps) {
+  // 6. State and hooks
+  const [isRegistered, setIsRegistered] = useState(false)
+  const formattedDate = formatDate(date)
+
+  // 7. Event handlers
+  const handleRegister = useCallback(() => {
+    setIsRegistered(true)
+    onRegister(title)
+  }, [onRegister, title])
+
+  // 8. Derived values
+  const eventFull = isEventFull(attendees)
+
+  // 9. Early returns
+  if (isRegistered) {
+    return <div>You are registered for {title}</div>
+  }
+
+  // 10. Main render
+  return (
+    <div className={styles.card}>
+      <h3>{title}</h3>
+      <p>{formattedDate}</p>
+      <p>{attendees} / {MAX_ATTENDEES} attending</p>
+      {eventFull ? (
+        <p>Event is full</p>
+      ) : (
+        <Button onClick={handleRegister}>Register</Button>
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## Section Organization Rules
+
+### Single Responsibility Per Section
+
+| Section | Contents | AI Signal |
+|---------|----------|-----------|
+| Imports | All imports, grouped by origin | Add import for new dependency |
+| Types | Props, state, and helper types | Add new prop |
+| Constants | Magic numbers, config values | Change configuration |
+| Helpers | Pure utility functions | Add data transformation |
+| Component | The component function | Edit rendering logic |
+| State/Hooks | All hook calls | Add new state |
+| Handlers | Event handlers and callbacks | Add new interaction |
+| Derived | Computed values from state | Add new computed value |
+| Early Returns | Guard clauses | Add loading/error state |
+| Render | JSX output | Change layout |
+
+### Consistent Hook Order
+
+```tsx
+export function UserDashboard({ userId }: UserDashboardProps) {
+  // Data fetching first
+  const { data: user, isLoading } = useUser(userId)
+  const { data: posts } = useUserPosts(userId)
+
+  // State management second
+  const [selectedTab, setSelectedTab] = useState('overview')
+  const [isEditing, setIsEditing] = useState(false)
+
+  // Refs third
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Memoized values fourth
+  const filteredPosts = useMemo(() =>
+    posts?.filter(p => p.status === 'published'), [posts]
+  )
+
+  // Callbacks last
+  const handleSave = useCallback(() => { ... }, [])
+  const handleCancel = useCallback(() => { ... }, [])
+
+  return (...)
+}
+```
+
+### Early Returns Before Main Render
+
+```tsx
+export function ProfilePage({ userId }: ProfilePageProps) {
+  const { data: user, isLoading, error } = useUser(userId)
+
+  if (isLoading) return <LoadingSkeleton />
+  if (error) return <ErrorState message={error.message} />
+  if (!user) return <NotFound type="user" />
+
+  return (
+    <div>
+      <UserProfile user={user} />
+    </div>
+  )
+}
+```
+
+---
+
+## Avoiding AI Pitfalls
+
+### Keep Files Under 200 Lines
+
+Long files confuse AI context windows. Break large components into smaller pieces.
+
+### One Export Per File
+
+```tsx
+// Correct
+export function UserCard(props: UserCardProps) { ... }
+
+// Incorrect
+export function UserCard(props: UserCardProps) { ... }
+export function UserAvatar(props: UserAvatarProps) { ... }
+export function UserStats(props: UserStatsProps) { ... }
+```
+
+### Clear Return Boundaries
+
+```tsx
+// Correct - clear return boundary
+return (
+  <div className={styles.container}>
+    ...
+  </div>
+)
+
+// Incorrect - returns without structure
+if (loading) return <Spinner />
+if (error) return <Error />
+return <div>...</div>
+```
+
+---
+
+## State Management Visibility
+
+Make state dependencies explicit for AI tools.
+
+```tsx
+// Correct - explicit state and its dependencies
+const [searchQuery, setSearchQuery] = useState('')
+const [searchResults, setSearchResults] = useState<Item[]>([])
+
+useEffect(() => {
+  const results = filterItems(items, searchQuery)
+  setSearchResults(results)
+}, [searchQuery, items])
+
+// Incorrect - state and its effects far apart
+const [searchQuery, setSearchQuery] = useState('')
+// 50 lines of other code...
+useEffect(() => {
+  setSearchResults(filterItems(items, searchQuery))
+}, [searchQuery, items])
+```
+
+---
+
+## Comment Markers for AI
+
+Add lightweight comments at section boundaries for components over 100 lines.
+
+```tsx
+// --------------- Data ----------------
+const { data: user } = useUser(userId)
+const { data: posts } = useUserPosts(userId)
+
+// --------------- State ----------------
+const [activeTab, setActiveTab] = useState<Tab>('overview')
+
+// --------------- Handlers ----------------
+const handleTabChange = (tab: Tab) => setActiveTab(tab)
+
+// --------------- Render ----------------
+return (...)
+```
+
+---
+
+## Common Mistakes
+
+- **Long single-file components** - break into hooks + sub-components at ~200 lines
+- **Scattered state and effects** - keep related state, effects, and handlers together
+- **Missing section structure** - consistent ordering helps AI find the right edit target
+- **Multiple exports per file** - one main export per file is more AI-reliable
+- **Ambiguous early returns** - make guard clauses visually distinct from main render
+- **Deep JSX nesting** - extract sections into variables or sub-components
+- **No section comments in long files** - AI tools benefit from clear section markers
+
+---
+
+## AI Coding Prompt Example
+
+```
+When editing React components in this project:
+- Maintain the standard section order: imports, types, constants, helpers, component, hooks, handlers, derived values, early returns, render
+- Keep files under 200 lines - extract hooks and sub-components as needed
+- Place early returns between hooks and the main return statement
+- Group state with its corresponding effects and handlers
+- Export one component per file
+- Add section comments (// --- Section Name ---) in components over 100 lines
+- Make the main JSX return visually distinct with proper indentation
+- Avoid deeply nested JSX - extract into variables or sub-components
+```
+
+---
+
+## Best Practices Summary
+
+- Follow a predictable section order: imports, types, constants, helpers, component, hooks, handlers, derived, early returns, render
+- Keep files under 200 lines; extract hooks and sub-components
+- Group related state, effects, and handlers together
+- One export per file for AI reliability
+- Place early returns between hooks and main render
+- Add section comments in components over 100 lines
+- Extract deeply nested JSX into named variables
+- Make state dependencies explicit and co-located

@@ -1,0 +1,343 @@
+---
+title: React Props Interface Standards
+description: Best practices for defining, naming, and organizing React component props interfaces to maximize predictability for developers and AI tools.
+tags:
+  - React
+  - TypeScript
+  - Components
+featured: true
+publishedAt: 2026-06-01
+---
+
+# React Props Interface Standards
+
+Consistent props interfaces are the contract between components and their consumers. Well-defined interfaces help AI tools generate correct usage, accurate autocomplete, and maintainable component APIs.
+
+---
+
+## Why Props Interfaces Matter
+
+Poorly defined props cause:
+
+- AI tools generating incorrect prop names or types
+- Components with unclear required vs optional props
+- Prop drilling that is hard to trace
+- Breaking changes that are difficult to detect
+- Confusing component APIs that require documentation lookup
+
+A clear props interface tells both developers and AI exactly how a component should be used.
+
+---
+
+## Naming Conventions
+
+### Interface Naming
+
+Use `{ComponentName}Props` pattern. Named exports, not `interface Props` (which collides across files).
+
+```tsx
+// Correct
+interface UserCardProps {
+  name: string
+  avatarUrl: string
+}
+
+// Correct - extended base
+interface AdminUserCardProps extends UserCardProps {
+  role: 'admin' | 'superadmin'
+}
+
+// Incorrect - too generic
+interface Props {
+  name: string
+}
+```
+
+### Avoid Default Exports on Props
+
+```tsx
+// Correct
+export interface ButtonProps { ... }
+
+// Incorrect
+interface Props { ... }
+export default Props
+```
+
+---
+
+## Required vs Optional Props
+
+### Required Props First
+
+Order props so required ones come first and optional ones follow.
+
+```tsx
+// Correct
+interface MediaCardProps {
+  src: string
+  alt: string
+  title?: string
+  className?: string
+  onClick?: () => void
+}
+
+// Incorrect - optional scattered among required
+interface MediaCardProps {
+  src: string
+  title?: string
+  alt: string
+  className?: string
+  onClick?: () => void
+}
+```
+
+### When to Make a Prop Required
+
+| Scenario | Required? |
+|----------|-----------|
+| Component has no meaningful default | Required |
+| Prop affects accessibility | Required |
+| Prop is purely visual/behavioral | Optional with sensible default |
+| Prop is an event handler | Optional |
+| Prop enables a feature mode | Optional, default to false |
+
+---
+
+## Children and Composition
+
+### Explicit Children Typing
+
+Always type `children` explicitly. Do not use implicit `any`.
+
+```tsx
+// Correct
+interface CardProps {
+  children: React.ReactNode
+  className?: string
+}
+
+// Correct - specific children type
+interface ListItemProps {
+  children: string | React.ReactElement<IconProps>
+}
+
+// Incorrect - too loose
+interface CardProps {
+  children: any
+}
+```
+
+### Composition Over Configuration
+
+Prefer passing React nodes over configuration objects for layout-oriented components.
+
+```tsx
+// Correct - composable
+interface PageLayoutProps {
+  header: React.ReactNode
+  sidebar: React.ReactNode
+  main: React.ReactNode
+  footer?: React.ReactNode
+}
+
+// Incorrect - rigid config object
+interface PageLayoutProps {
+  config: {
+    showHeader: boolean
+    headerTitle: string
+    sidebarItems: string[]
+    mainContent: string
+  }
+}
+```
+
+---
+
+## Callback Props
+
+### Consistent Event Handler Naming
+
+Prefix callbacks with `on` and use past-tense verb.
+
+```tsx
+// Correct
+interface FormProps {
+  onSubmit: (data: FormData) => void
+  onCancel: () => void
+  onFieldChange: (field: string, value: unknown) => void
+}
+
+// Incorrect - inconsistent naming
+interface FormProps {
+  submit: (data: FormData) => void
+  handleCancel: () => void
+  fieldChanged: (field: string, value: unknown) => void
+}
+```
+
+### Typed Event Parameters
+
+Never use `any` for event parameters.
+
+```tsx
+// Correct
+interface SearchInputProps {
+  onChange: (value: string) => void
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+}
+
+// Incorrect
+interface SearchInputProps {
+  onChange: (value: any) => void
+  onKeyDown: (e: any) => void
+}
+```
+
+---
+
+## Style-Related Props
+
+### Typed ClassName and Style
+
+Use type-safe patterns for styling props.
+
+```tsx
+// Correct
+interface BadgeProps {
+  variant: 'default' | 'success' | 'warning' | 'error'
+  size: 'sm' | 'md' | 'lg'
+  className?: string
+  style?: React.CSSProperties
+}
+
+// Incorrect
+interface BadgeProps {
+  variant: string
+  size: string
+}
+```
+
+### Avoid Stringly-Typed Visual Props
+
+```tsx
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error'
+type BadgeSize = 'sm' | 'md' | 'lg'
+
+// Correct
+interface BadgeProps {
+  variant: BadgeVariant
+  size?: BadgeSize
+}
+
+// Incorrect
+interface BadgeProps {
+  variant: string
+  className: string
+}
+```
+
+---
+
+## Extending Native HTML Attributes
+
+### Correct Pattern
+
+Use `ComponentPropsWithoutRef` for native element props.
+
+```tsx
+// Correct
+import type { ComponentPropsWithoutRef } from 'react'
+
+interface ButtonProps extends ComponentPropsWithoutRef<'button'> {
+  variant: 'primary' | 'secondary' | 'ghost'
+  isLoading?: boolean
+}
+
+// Incorrect - manual spread
+interface ButtonProps {
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+  onClick?: () => void
+  variant: 'primary' | 'secondary' | 'ghost'
+}
+```
+
+### When to Use ComponentPropsWithRef
+
+Only when the component uses `forwardRef`.
+
+```tsx
+import { forwardRef, type ComponentPropsWithRef } from 'react'
+
+interface InputProps extends ComponentPropsWithRef<'input'> {
+  label: string
+  error?: string
+}
+
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, ...nativeProps }, ref) => { ... }
+)
+```
+
+---
+
+## Default Values
+
+Use destructuring defaults, not runtime checks, for optional props.
+
+```tsx
+// Correct - destructuring default
+function Badge({
+  variant = 'default',
+  size = 'md',
+  children,
+}: BadgeProps) { ... }
+
+// Incorrect - runtime fallback
+function Badge(props: BadgeProps) {
+  const variant = props.variant ?? 'default'
+  ...
+}
+```
+
+---
+
+## Common Mistakes
+
+- **any in props** - always type event parameters and data
+- **Missing children type** - use React.ReactNode, not implicit any
+- **Unbounded string unions** - use literal union types
+- **Duplicate props from manual HTML attributes** - extend ComponentPropsWithoutRef
+- **Required props that should be optional** - if there's a sensible default, make it optional
+- **Nested config objects** - prefer flat props for better AI autocomplete
+
+---
+
+## AI Coding Prompt Example
+
+```
+When defining React component props interfaces in this project:
+- Use {ComponentName}Props naming with named exports
+- List required props first, optional props after
+- Type children as React.ReactNode explicitly
+- Prefix callbacks with 'on' and type parameters strictly
+- Use literal union types for variants (e.g. 'primary' | 'secondary')
+- Extend ComponentPropsWithoutRef for native HTML props
+- Set defaults via destructuring, not runtime fallbacks
+- Keep props flat - avoid nested config objects
+- Never use 'any' for prop types or event parameters
+```
+
+---
+
+## Best Practices Summary
+
+- Name interfaces {ComponentName}Props with named exports
+- Required props first, optional after
+- Type children explicitly as React.ReactNode
+- on prefix for callbacks with typed parameters
+- Literal union types for variants, not string
+- Extend ComponentPropsWithoutRef for native attributes
+- Destructuring defaults for optional props
+- Flat, composable props - avoid nested config objects
