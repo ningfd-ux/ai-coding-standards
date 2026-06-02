@@ -65,6 +65,16 @@ const auth = true
 function GetUser() {}
 ```
 
+### Boolean Convention
+
+Use `is`, `has`, `can`, `should`, `will` prefixes for booleans:
+
+```ts
+const isSubscribed = true
+const hasPermission = false
+const canEdit = user.role === 'editor'
+```
+
 ---
 
 ## Component Naming
@@ -76,6 +86,7 @@ Use PascalCase for React components.
 ```tsx
 export function UserCard() {}
 export function SettingsModal() {}
+export function ProfileDropdownMenu() {}
 ```
 
 ### Incorrect ❌
@@ -83,6 +94,33 @@ export function SettingsModal() {}
 ```tsx
 export function userCard() {}
 export function settings_modal() {}
+export function Profile_dropdown_Menu() {}
+```
+
+---
+
+## React Hook Naming
+
+Prefix custom hooks with `use`. Return an array or a named object.
+
+### Correct ✅
+
+```ts
+function useUser(userId: string): { user: User | null; isLoading: boolean; error: Error | null } {
+  // ...
+}
+
+function useForm<T>(initial: T): [T, (patch: Partial<T>) => void] {
+  // ...
+}
+```
+
+### Incorrect ❌
+
+```ts
+function fetchUser(userId: string) {
+  // looks like a regular function, breaks hooks rules
+}
 ```
 
 ---
@@ -96,6 +134,13 @@ Avoid the `I` prefix for interfaces. Use PascalCase.
 ```ts
 interface User {
   id: string
+  name: string
+  email: string
+}
+
+interface AuthResponse {
+  token: string
+  expiresAt: number
 }
 ```
 
@@ -105,6 +150,25 @@ interface User {
 interface IUser {
   id: string
 }
+
+interface IAuthResponse {
+  token: string
+}
+```
+
+### When to Use Interface vs Type
+
+```ts
+// Interface — prefer for public API shapes (can be extended)
+interface UserPreferences {
+  theme: 'light' | 'dark'
+  language: string
+}
+
+// Type — prefer for unions, intersections, and computed types
+type Status = 'idle' | 'loading' | 'success' | 'error'
+type ApiResult<T> = { data: T } | { error: string }
+type ComponentProps = ButtonProps & { className?: string }
 ```
 
 ---
@@ -118,6 +182,7 @@ Use PascalCase for type aliases.
 ```ts
 type UserRole = 'admin' | 'editor' | 'viewer'
 type ApiResponse<T> = { data: T; error: null }
+type ValueOf<T> = T[keyof T]
 ```
 
 ### Incorrect ❌
@@ -152,6 +217,39 @@ enum user_role {
 }
 ```
 
+### Prefer String Enums
+
+```ts
+enum HttpStatus {
+  Ok = 'OK',
+  NotFound = 'NOT_FOUND',
+  InternalError = 'INTERNAL_ERROR',
+}
+```
+
+---
+
+## Generic Type Parameters
+
+Use descriptive generic names for complex cases. Single letters for simple cases.
+
+### Correct ✅
+
+```ts
+// Simple: single letter
+function identity<T>(value: T): T
+
+// Complex: descriptive
+function createPair<TKey, TValue>(key: TKey, value: TValue): [TKey, TValue]
+function mergeObjects<TObjectA, TObjectB>(a: TObjectA, b: TObjectB): TObjectA & TObjectB
+```
+
+### Incorrect ❌
+
+```ts
+function process<T, U, V>(a: T, b: U, c: V)  // meaningless when >2 params
+```
+
 ---
 
 ## File Naming Standards
@@ -164,6 +262,7 @@ Use kebab-case for filenames.
 user-profile.ts
 auth-service.ts
 settings-modal.tsx
+use-auth.ts
 ```
 
 ### Incorrect ❌
@@ -172,6 +271,7 @@ settings-modal.tsx
 UserProfile.ts
 AuthService.ts
 settingsModal.tsx
+useAuth.ts
 ```
 
 ---
@@ -185,6 +285,7 @@ Use UPPER_SNAKE_CASE for module-level constants.
 ```ts
 const MAX_RETRY_COUNT = 3
 const API_BASE_URL = 'https://api.example.com'
+const DEFAULT_PAGE_SIZE = 20
 ```
 
 ### Incorrect ❌
@@ -196,18 +297,72 @@ const apiBaseUrl = 'https://api.example.com'
 
 ---
 
+## Modern TypeScript Patterns (TS 5.x)
+
+### `satisfies` for Type Validation Without Widening
+
+```ts
+const palette = {
+  red: [255, 0, 0],
+  green: '#00ff00',
+  blue: [0, 0, 255],
+} satisfies Record<string, string | number[]>
+
+// palette.red is type number[], not string | number[]
+// palette.green is type string
+```
+
+### `const` Type Parameters
+
+```ts
+function asConst<T extends readonly string[]>(arr: T): T {
+  return arr
+}
+
+const roles = asConst(['admin', 'editor', 'viewer'])
+// type: readonly ["admin", "editor", "viewer"], not string[]
+```
+
+---
+
 ## AI Coding Prompt Example
 
 Use the following instruction when working with AI coding tools:
 
 ```
 Follow the TypeScript naming conventions defined in this project:
-- camelCase for variables and functions
-- PascalCase for components and types
-- kebab-case for filenames
-- avoid interface prefixes like IUser
-- UPPER_SNAKE_CASE for module constants
+
+- camelCase for variables, functions, and methods
+- PascalCase for components, interfaces, types, enums, and enum members
+- kebab-case for filenames matching the primary export
+- Boolean variables prefixed with is, has, can, should
+- Custom hooks prefixed with use (camelCase after use)
+- Avoid interface prefixes like IUser
+- UPPER_SNAKE_CASE for module-level constants
+- Interface for public API shapes (extensible), type for unions/computed types
+- Use satisfies for type validation without widening
+- Descriptive generics when more than 2 type parameters
+- Prefer string enums over numeric enums
 ```
+
+---
+
+## FAQ
+
+**Q: Why avoid the `I` prefix for interfaces?**
+A: The `I` prefix is a C#/Java convention that adds noise without value in TypeScript. TypeScript is structurally typed — there is no runtime distinction between interface and class. `User` is cleaner than `IUser`, and if you later change from interface to class, you don't need to rename.
+
+**Q: When should I use `interface` vs `type`?**
+A: Use `interface` for object shapes that may be extended (declaration merging). Use `type` for unions, intersections, mapped types, and computed types. For simple component props, both work — pick one and stay consistent.
+
+**Q: How do I name files that export multiple things?**
+A: File names should match the primary export. If a file exports `UserCard` as the main component, name it `user-card.tsx`. Barrel exports in `index.ts` can re-export multiple things from a directory.
+
+**Q: What about naming in tests?**
+A: Test files mirror their source: `user-card.test.tsx` for `user-card.tsx`. Test descriptions use sentence case: `describe('UserCard', () => { it('renders user name', () => { ... }) })`.
+
+**Q: Should I use `const enum` or regular `enum`?**
+A: Avoid `const enum` — it can cause issues with bundlers and isolatedModules. Use regular `enum` or `as const` objects instead.
 
 ---
 
@@ -218,3 +373,6 @@ Follow the TypeScript naming conventions defined in this project:
 - Align filenames with exports
 - Avoid abbreviations unless universally understood
 - Prefer predictable patterns across the repository
+- Avoid I-prefix interfaces
+- Use satisfies for precise type inference
+- Descriptive generics for complex type parameters

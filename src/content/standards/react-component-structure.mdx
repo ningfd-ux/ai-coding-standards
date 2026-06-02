@@ -52,6 +52,28 @@ components/
 ├── AllStyles.css       // global styles mixed together
 ```
 
+### With Barrel Exports
+
+```
+components/
+└── UserCard/
+    ├── UserCard.tsx
+    ├── UserCard.test.tsx
+    ├── UserCard.module.css
+    └── index.ts              // re-export for clean imports
+```
+
+```ts
+// index.ts
+export { UserCard } from './UserCard'
+export type { UserCardProps } from './UserCard'
+```
+
+Usage:
+```ts
+import { UserCard } from '@/components/UserCard'
+```
+
 ---
 
 ## Component Declaration
@@ -173,6 +195,55 @@ export function Card({
 
 ---
 
+## Server & Client Components (React 19 / Next.js App Router)
+
+Use `'use client'` boundaries intentionally. Keep server components as the default.
+
+### Correct ✅
+
+```tsx
+// UserProfile.tsx — Server Component (default)
+import { db } from '@/lib/db'
+import { UserAvatar } from './UserAvatar' // client component
+
+export function UserProfile({ userId }: { userId: string }) {
+  const user = await db.user.findUnique(userId) // direct DB access
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <UserAvatar user={user} /> {/* client island */}
+    </div>
+  )
+}
+```
+
+```tsx
+// UserAvatar.tsx — Client Component
+'use client'
+
+import { useState } from 'react'
+
+export function UserAvatar({ user }: { user: { name: string; avatarUrl?: string } }) {
+  const [isOpen, setIsOpen] = useState(false)
+  // ...
+}
+```
+
+### Incorrect ❌
+
+```tsx
+// Everything as client component = bundle bloat
+'use client'
+import { useEffect, useState } from 'react'
+import { db } from '@/lib/db'  // server-only import in client component
+
+export function UserProfile({ userId }: { userId: string }) {
+  // ...
+}
+```
+
+---
+
 ## State Management
 
 Keep state as close to where it's used as possible. Lift only when needed.
@@ -203,6 +274,36 @@ export function Page() {
 }
 ```
 
+### Using React 19 Hooks
+
+```tsx
+import { use, useActionState, useOptimistic } from 'react'
+
+// use() for reading async resources
+export function Comments({ commentsPromise }: { commentsPromise: Promise<Comment[]> }) {
+  const comments = use(commentsPromise)
+  return comments.map(c => <Comment key={c.id} comment={c} />)
+}
+
+// useActionState for form handling
+export function LikeButton({ postId }: { postId: string }) {
+  const [likes, formAction, isPending] = useActionState(
+    async (previousLikes: number) => {
+      const res = await fetch(`/api/posts/${postId}/like`, { method: 'POST' })
+      return res.json().likes
+    },
+    0
+  )
+  return (
+    <form action={formAction}>
+      <button type="submit" disabled={isPending}>
+        {likes} {isPending ? '...' : 'Likes'}
+      </button>
+    </form>
+  )
+}
+```
+
 ---
 
 ## Event Handlers
@@ -225,17 +326,77 @@ export function Form({ onSubmit }: { onSubmit: (data: FormData) => void }) {
 
 ---
 
+## Error Boundaries
+
+Wrap error-prone sections in error boundary components.
+
+```tsx
+'use client'
+
+import { Component, type ReactNode } from 'react'
+
+interface ErrorBoundaryProps {
+  fallback?: ReactNode
+  children: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? <div>Something went wrong</div>
+    }
+    return this.props.children
+  }
+}
+```
+
+---
+
 ## AI Coding Prompt Example
 
 ```
 When generating React components:
-- Use named function declarations with explicit Props interfaces
-- One component per file, co-locate test and style files
+
+- Named function declarations with explicit Props interfaces — no default exports
+- One component per file, co-locate test (.test.tsx) and style (.module.css) files
 - Prefer composition (compound components) over prop proliferation
 - Keep state local, lift only when shared
 - Prefix handlers with "handle", callback props with "on"
 - Use discriminated unions for component variants
+- Default to Server Components; add 'use client' only when necessary (hooks, state, events)
+- Use React 19 patterns: use() for promises, useActionState for forms, useOptimistic for optimistic updates
+- Wrap error-prone UI sections in ErrorBoundary
+- Barrel exports (index.ts) for clean import paths
 ```
+
+---
+
+## FAQ
+
+**Q: Should I use default exports or named exports?**
+A: Named exports. They enable better tree-shaking, consistent imports, and explicit autocomplete. Default exports cause import naming inconsistencies across the codebase.
+
+**Q: When should I add `'use client'`?**
+A: Only when you need React hooks (useState, useEffect, useContext), browser APIs, event handlers, or interactive state. Everything else should be a Server Component by default.
+
+**Q: What's the difference between React 19 `use()` and `useEffect` for data fetching?**
+A: `use()` integrates with Suspense natively — the parent controls the loading state. `useEffect` requires manual loading state management. Use `use()` for async data your component depends on, `useEffect` for side effects.
+
+**Q: Should I put PropTypes alongside TypeScript interfaces?**
+A: No. With TypeScript, PropTypes are redundant. TypeScript provides compile-time checking; PropTypes only adds runtime overhead and bundle size.
+
+**Q: How do I handle global state?**
+A: Start with React context + useReducer for simple cases. Lift to Zustand or Jotai when context causes excessive re-renders. Avoid Redux for new projects unless you have specific middleware/ecosystem needs.
 
 ---
 
@@ -246,3 +407,7 @@ When generating React components:
 - Compound components for complex UIs
 - State as local as possible
 - Consistent event handler naming
+- Server Components by default, `'use client'` only when needed
+- React 19 hooks for async and form state
+- Error boundaries for resilience
+- Barrel exports for clean imports

@@ -117,6 +117,31 @@ pages/
     └── index.astro          // /frameworks
 ```
 
+### Dynamic Route Example
+
+```astro
+---
+// src/pages/standards/[slug].astro
+import { getCollection } from 'astro:content'
+import StandardLayout from '@/layouts/StandardLayout.astro'
+
+export async function getStaticPaths() {
+  const standards = await getCollection('standards')
+  return standards.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }))
+}
+
+const { entry } = Astro.props
+const { Content } = await entry.render()
+---
+
+<StandardLayout>
+  <Content />
+</StandardLayout>
+```
+
 ---
 
 ## Content Collections
@@ -136,6 +161,29 @@ content/
 The filename becomes the URL slug automatically:
 - `typescript-naming.mdx` → `/standards/typescript-naming`
 
+### Content Collection Schema
+
+Define a consistent schema for each collection:
+
+```ts
+// src/content/config.ts
+import { defineCollection, z } from 'astro:content'
+
+const standards = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()),
+    featured: z.boolean().default(false),
+    publishedAt: z.date(),
+    updatedAt: z.date().optional(),
+  }),
+})
+
+export const collections = { standards }
+```
+
 ---
 
 ## Layout Structure
@@ -148,6 +196,37 @@ Layouts wrap pages. Keep them in a dedicated folder.
 layouts/
 ├── BaseLayout.astro    # Root layout: HTML shell + SEO + header/footer
 └── StandardLayout.astro # Detail page layout: content + sidebar
+```
+
+### Astro Layout with SEO
+
+```astro
+---
+// src/layouts/BaseLayout.astro
+interface Props {
+  title: string
+  description: string
+  image?: string
+}
+
+const { title, description, image } = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {image && <meta property="og:image" content={image} />}
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
 ```
 
 ---
@@ -165,6 +244,18 @@ public/
 │   └── diagrams/
 ├── favicon.svg
 └── robots.txt
+```
+
+### Using astro:assets (Astro 4+)
+
+```astro
+---
+// Import and optimize images with astro:assets
+import { Image } from 'astro:assets'
+import heroImage from '@/images/hero.png'
+---
+
+<Image src={heroImage} alt="Hero" width={1200} height={630} format="webp" />
 ```
 
 ---
@@ -193,18 +284,75 @@ import { cn } from "@/lib/utils"
 
 ---
 
+## Middleware & Endpoints
+
+Keep API endpoints and middleware in dedicated folders.
+
+### Correct ✅
+
+```
+src/
+├── middleware.ts              # onRequest hook
+└── pages/
+    └── api/
+        ├── subscribe.ts       # POST /api/subscribe
+        └── contact.ts         # POST /api/contact
+```
+
+```ts
+// src/pages/api/subscribe.ts
+import type { APIRoute } from 'astro'
+
+export const POST: APIRoute = async ({ request }) => {
+  const data = await request.formData()
+  const email = data.get('email')
+
+  // Validate and process
+  if (!email) {
+    return new Response(JSON.stringify({ error: 'Email required' }), { status: 400 })
+  }
+
+  return new Response(JSON.stringify({ success: true }), { status: 200 })
+}
+```
+
+---
+
 ## AI Coding Prompt Example
 
 ```
 When working with this Astro project:
+
+- Content Collections in src/content/ with zod schema validation
+- Dynamic routes via [slug].astro with getStaticPaths
+- Components split by domain: layout/, ui/, [domain]/
 - Astro components (.astro) in src/components/
 - React components (.tsx) in src/components/ui/
 - Pages follow file-based routing in src/pages/
-- Content in src/content/[collection]/
-- Static assets in public/
+- API endpoints in src/pages/api/
+- Layouts in src/layouts/ with named slots
+- Static assets in public/ organized by type
+- Image optimization via astro:assets <Image /> component
 - Use @/ path alias for all imports
 - Component files use PascalCase, content files use kebab-case
+- Middleware in src/middleware.ts for global onRequest hooks
 ```
+
+---
+
+## FAQ
+
+**Q: Should I put Astro components and React components in the same folder?**
+A: No. Keep `components/[domain]/` for Astro components (`.astro`) and `components/ui/` for React/JSX components (`.tsx` or `.jsx`). This prevents confusion about which rendering framework a component uses.
+
+**Q: Where do API endpoints go in Astro?**
+A: In `src/pages/api/`. Astro treats files in `pages/api/` as server endpoints, not pages. Each file exports an `APIRoute` handler for GET, POST, PUT, DELETE, etc.
+
+**Q: How do I handle images in Astro?**
+A: Use `public/` for static images (served directly) or `src/` with `astro:assets` for optimized images. The `<Image />` component auto-generates responsive sizes, WebP/AVIF formats, and lazy loading.
+
+**Q: What about Astro 5 Server Islands?**
+Q: Server Islands (.astro components with `server:defer`) go in the same component folders as regular Astro components. The folder structure doesn't change — only the rendering strategy differs.
 
 ---
 
@@ -214,5 +362,9 @@ When working with this Astro project:
 - Pages mirror URL structure
 - Content filenames = URL slugs (kebab-case)
 - Component files use PascalCase
-- Use `@/` path aliases for clean imports
+- Use @/ path aliases for clean imports
 - Static assets organized by type in `public/`
+- Define content collection schemas in `src/content/config.ts`
+- API endpoints in `src/pages/api/`
+- Middleware in `src/middleware.ts`
+- Use astro:assets for optimized images
