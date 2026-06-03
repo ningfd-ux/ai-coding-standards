@@ -1,0 +1,325 @@
+---
+title: AI-Friendly React State Management
+description: State management patterns optimized for AI coding tools, ensuring predictable state updates, accurate autocomplete, and maintainable state logic across React applications.
+tags:
+  - React
+  - State Management
+  - AI Coding
+featured: true
+publishedAt: 2026-06-08
+---
+
+# AI-Friendly React State Management
+
+AI coding tools reason about state based on patterns they've seen during training. Predictable state management patterns produce significantly better AI-generated code than ad-hoc approaches. This guide covers state patterns that both humans and AI can work with reliably.
+
+---
+
+## Why AI-Friendly State Matters
+
+AI tools struggle with:
+
+- Inconsistent state update patterns (mix of useState, useReducer, and external stores without reason)
+- State scattered across components instead of centralized
+- Mutations instead of immutable updates
+- Side effects buried inside state updates
+- Overly complex state that is hard to trace
+
+Predictable state patterns help AI tools generate correct updates, accurate hooks, and maintainable data flows.
+
+---
+
+## Choosing the Right State Tool
+
+### Decision Matrix
+
+| Scenario | Tool | AI Predictability |
+|----------|------|-------------------|
+| Single independent value | `useState` | High |
+| Multiple related values | `useState` with object | Medium |
+| Complex state with history | `useReducer` | High |
+| Shared across many components | Context + `useReducer` | High |
+| Server state | React Query / SWR (dedicated pattern) | High |
+| Form state | React Hook Form | High |
+| Global app state | Zustand or Context | Medium-High |
+
+### Use Consistent Patterns for Similar Problems
+
+```tsx
+// Correct - useState for simple local values
+const [isOpen, setIsOpen] = useState(false)
+const [count, setCount] = useState(0)
+
+// Correct - useReducer for related state transitions
+const [state, dispatch] = useReducer(timerReducer, initialState)
+
+// Correct - dedicated library for server state
+const { data, isLoading } = useQuery(['users'], fetchUsers)
+```
+
+---
+
+## useState Patterns for AI
+
+### Group Related State
+
+When multiple `useState` calls track related values, group them into an object.
+
+```tsx
+// Correct - related state grouped
+interface FormState {
+  email: string
+  password: string
+  rememberMe: boolean
+}
+
+function LoginForm() {
+  const [form, setForm] = useState<FormState>({
+    email: '',
+    password: '',
+    rememberMe: false,
+  })
+
+  const updateField = (field: keyof FormState, value: string | boolean) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+  // ...
+}
+
+// Incorrect - scattered related state
+function LoginForm() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  // ...
+}
+```
+
+### Typed Setters
+
+Always type the state value. This gives AI tools the information they need for accurate completions.
+
+```tsx
+// Correct - typed state
+const [user, setUser] = useState<User | null>(null)
+
+// Incorrect - implicit any
+const [user, setUser] = useState(null)
+```
+
+---
+
+## useReducer Patterns for AI
+
+### Named Action Types
+
+Define action types as a TypeScript union for exhaustive handling.
+
+```tsx
+// Correct - typed actions
+type CartAction =
+  | { type: 'ADD_ITEM'; payload: CartItem }
+  | { type: 'REMOVE_ITEM'; payload: string }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'CLEAR_CART' }
+
+function cartReducer(state: CartState, action: CartAction): CartState {
+  switch (action.type) {
+    case 'ADD_ITEM':
+      return { ...state, items: [...state.items, action.payload] }
+    case 'REMOVE_ITEM':
+      return { ...state, items: state.items.filter(i => i.id !== action.payload) }
+    case 'UPDATE_QUANTITY':
+      return {
+        ...state,
+        items: state.items.map(i =>
+          i.id === action.payload.id
+            ? { ...i, quantity: action.payload.quantity }
+            : i
+        ),
+      }
+    case 'CLEAR_CART':
+      return { ...state, items: [] }
+    default:
+      return state
+  }
+}
+
+// Incorrect - untyped action
+function cartReducer(state: CartState, action: any) {
+  switch (action.type) {
+    case 'add_item':
+      // ...
+  }
+}
+```
+
+### Action Creator Functions
+
+Export action creator functions to make dispatching predictable for AI tools.
+
+```tsx
+// Correct - action creators
+export const addItem = (item: CartItem): CartAction => ({
+  type: 'ADD_ITEM',
+  payload: item,
+})
+
+export const removeItem = (id: string): CartAction => ({
+  type: 'REMOVE_ITEM',
+  payload: id,
+})
+
+// Usage - clear intent
+dispatch(addItem({ id: '1', name: 'Widget', price: 9.99, quantity: 1 }))
+dispatch(removeItem('1'))
+
+// Incorrect - inline object dispatch
+dispatch({ type: 'ADD_ITEM', payload: { id: '1', name: 'Widget', price: 9.99, quantity: 1 } })
+```
+
+---
+
+## Async State Pattern
+
+### Explicit Async State Shape
+
+Define a consistent type for async state to make loading/error/data handling predictable.
+
+```tsx
+// Correct - reusable async state type
+type AsyncState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: string }
+
+// Correct - consistent usage
+function UserProfile({ userId }: { userId: string }) {
+  const [user, setUser] = useState<AsyncState<User>>({ status: 'idle' })
+
+  useEffect(() => {
+    setUser({ status: 'loading' })
+    fetchUser(userId)
+      .then(data => setUser({ status: 'success', data }))
+      .catch(error => setUser({ status: 'error', error: error.message }))
+  }, [userId])
+
+  switch (user.status) {
+    case 'idle':
+    case 'loading':
+      return <LoadingSpinner />
+    case 'success':
+      return <ProfileDisplay user={user.data} />
+    case 'error':
+      return <ErrorMessage message={user.error} />
+  }
+}
+```
+
+### Use a Dedicated Async State Hook
+
+Create a reusable hook for async operations that AI tools can recognize.
+
+```tsx
+function useAsync<T>(
+  asyncFn: () => Promise<T>,
+  deps: unknown[]
+): AsyncState<T> & { execute: () => void } {
+  const [state, setState] = useState<AsyncState<T>>({ status: 'idle' })
+
+  const execute = useCallback(() => {
+    let cancelled = false
+    setState({ status: 'loading' })
+
+    asyncFn()
+      .then(data => {
+        if (!cancelled) setState({ status: 'success', data })
+      })
+      .catch(error => {
+        if (!cancelled) setState({ status: 'error', error: error.message })
+      })
+
+    return () => { cancelled = true }
+  }, deps)
+
+  return { ...state, execute }
+}
+```
+
+---
+
+## State Isolation Pattern
+
+### Keep UI State and Data State Separate
+
+UI state (modals, dropdowns) should be isolated from data state (API responses, form values).
+
+```tsx
+// Correct - separated concerns
+function Dashboard() {
+  // UI state
+  const [isSidebarOpen, setSidebarOpen] = useState(true)
+  const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview')
+
+  // Data state
+  const { data: dashboardData } = useQuery(['dashboard'], fetchDashboard)
+  const { data: notifications } = useQuery(['notifications'], fetchNotifications)
+
+  return ( /* ... */ )
+}
+
+// Incorrect - mixed state
+function Dashboard() {
+  const [state, dispatch] = useReducer(dashboardReducer, {
+    isSidebarOpen: true,
+    activeTab: 'overview',
+    dashboardData: null,
+    notifications: [],
+    // ... everything mixed together
+  })
+}
+```
+
+---
+
+## Common Mistakes
+
+- **Untyped useState** - `useState(null)` without generic type parameter
+- **Inline dispatch objects** - scattering raw dispatch calls instead of action creators
+- **Mutable state updates** - `state.items.push(newItem)` instead of immutable patterns
+- **Too many useState calls** - 10+ individual useState hooks instead of grouping related state
+- **Missing loading states** - data fetching without loading/error status tracking
+- **Deeply nested state** - state that is 4+ levels deep, causing re-render issues
+- **Over-engineering** - using useReducer for a single boolean toggle
+
+---
+
+## AI Coding Prompt Example
+
+```
+When managing React state in this project:
+- Use useState for simple independent values, useReducer for complex related state
+- Group related state into typed objects with a shared interface
+- Use discriminated union type for async state (idle | loading | success | error)
+- Export action creators for all reducer actions
+- Separate UI state (modals, toggles) from data state (API, forms)
+- Always type useState with generics: useState<T>(initialValue)
+- Use immutable update patterns (spread, map, filter -- never push/splice directly)
+- Prefer flat state shapes (no more than 2 levels deep)
+- Use React Query / SWR for server state, not manual useEffect + useState
+```
+
+---
+
+## Best Practices Summary
+
+- Match state tool to complexity: useState to useReducer to Context to external lib
+- Group related state into typed objects
+- Use discriminated union pattern for async states
+- Export action creators for all reducers
+- Separate UI state from data state
+- Always provide generic types to useState
+- Keep state shallow and predictable
+- Prefer immutable updates with spread and functional setState

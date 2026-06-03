@@ -27,7 +27,7 @@ Each week = Mon (Core) + Wed (Framework) + Fri (AI-Friendly)
 
 | Week | Mon | Wed | Fri |
 |------|-----|-----|-----|
-| W5 | React Context Organization Standards | TypeScript Interface Design Standards | AI-Friendly React State Management |
+| W5 | [x] React Context Organization Standards | [x] TypeScript Interface Design Standards | [x] AI-Friendly React State Management |
 | W6 | React File Naming Standards | Reusable Component Patterns | AI Readable Hook Patterns |
 | W7 | React Event Handler Naming | Tailwind Variant Naming Standards | Prompt-Friendly Component APIs |
 | W8 | React Composition Patterns | TypeScript Utility Type Standards | AI-Friendly Props Structure |

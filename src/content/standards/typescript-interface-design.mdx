@@ -1,0 +1,373 @@
+---
+title: TypeScript Interface Design Standards
+description: Best practices for designing TypeScript interfaces that are predictable, maintainable, and optimized for AI code generation across your codebase.
+tags:
+  - TypeScript
+  - Interfaces
+  - Types
+featured: true
+publishedAt: 2026-06-08
+---
+
+# TypeScript Interface Design Standards
+
+Well-designed TypeScript interfaces are the backbone of type-safe applications. Consistent interface patterns help AI tools generate accurate completions, catch type errors early, and make your codebase self-documenting.
+
+---
+
+## Why Interface Design Matters
+
+Poorly designed interfaces cause:
+
+- AI tools generating incorrect property types or names
+- Interfaces that are too rigid or too loose
+- Unnecessary breaking changes from internal refactors
+- Confusing naming that requires context switching
+- Type errors that are hard to trace across large codebases
+
+A well-designed interface tells both developers and AI exactly what shape data should take.
+
+---
+
+## Naming Conventions
+
+### Interface Naming Rules
+
+Use PascalCase with descriptive domain context. Prefer `I` prefix only when explicitly required by project conventions.
+
+```tsx
+// Correct - descriptive domain name
+interface UserProfile {
+  id: string
+  displayName: string
+}
+
+// Correct - verb-based for functions/options
+interface CreateUserOptions {
+  email: string
+  password: string
+}
+
+// Acceptable - I-prefix for legacy projects (if consistent)
+interface IUserService {
+  getUser(id: string): UserProfile
+}
+
+// Incorrect - too generic
+interface Data {
+  id: string
+  name: string
+}
+```
+
+### Type vs Interface
+
+Use `interface` for object shapes that may be extended. Use `type` for unions, primitives, and tuples.
+
+```tsx
+// interface - extendable object shape
+interface BaseEntity {
+  id: string
+  createdAt: Date
+}
+
+// type - union or intersection
+type Status = 'active' | 'inactive' | 'pending'
+type ApiResponse<T> = { data: T; error: null } | { data: null; error: ApiError }
+type ComponentProps = BaseProps & ExtraProps  // intersection prefer type
+```
+
+---
+
+## Property Design
+
+### Required Properties First
+
+Order interface properties logically: required first, optional after, methods last.
+
+```tsx
+// Correct
+interface BlogPost {
+  title: string
+  content: string
+  authorId: string
+  publishedAt?: Date
+  tags?: string[]
+  summary?: string
+}
+
+// Incorrect - random order
+interface BlogPost {
+  tags?: string[]
+  title: string
+  summary?: string
+  authorId: string
+  publishedAt?: Date
+  content: string
+}
+```
+
+### Never Use `any` in Interfaces
+
+Use specific types or `unknown` when the type is genuinely not known.
+
+```tsx
+// Correct - unknown for truly dynamic data
+interface ApiResponse {
+  status: number
+  data: unknown
+}
+
+// Correct - generic for flexible types
+interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+}
+
+// Incorrect - any obscures type safety
+interface ApiResponse {
+  status: number
+  data: any
+}
+```
+
+### Use Readonly for Immutable Properties
+
+Mark properties that should not be modified after creation.
+
+```tsx
+// Correct
+interface UserConfig {
+  readonly id: string
+  readonly createdAt: Date
+  displayName: string
+  preferences: UserPreferences
+}
+
+// Correct - readonly array
+interface SearchResult {
+  readonly items: ReadonlyArray<ResultItem>
+  total: number
+}
+
+// Incorrect - mutable when intended to be immutable
+interface UserConfig {
+  id: string
+  createdAt: Date
+}
+```
+
+---
+
+## Extending Interfaces
+
+### Composition Over Deep Inheritance
+
+Prefer extending interfaces one level deep. Avoid chains of three or more levels.
+
+```tsx
+// Correct - shallow extension
+interface AuditableEntity {
+  createdAt: Date
+  updatedAt: Date
+  createdBy: string
+}
+
+interface User extends AuditableEntity {
+  email: string
+  displayName: string
+}
+
+// Correct - intersection for mixing concerns
+type AdminUser = User & { role: 'admin'; permissions: string[] }
+
+// Incorrect - deep inheritance chain
+interface Entity { id: string }
+interface AuditableEntity extends Entity { createdAt: Date }
+interface User extends AuditableEntity { email: string }
+interface AdminUser extends User { role: 'admin' }
+```
+
+### Interface Merging for Augmentation
+
+Use declaration merging sparingly -- prefer explicit composition.
+
+```tsx
+// Acceptable - library augmentation
+// express.d.ts
+declare namespace Express {
+  interface Request {
+    user?: UserProfile
+  }
+}
+
+// Avoid in application code - confusing
+// Incorrect
+interface UserProfile {
+  name: string
+}
+// elsewhere...
+interface UserProfile {
+  email: string
+}
+// UserProfile now has both name and email -- unpredictable
+```
+
+---
+
+## Generic Interface Patterns
+
+### Single Responsibility Generics
+
+Each generic type parameter should represent one clear concept.
+
+```tsx
+// Correct - clear single purpose
+interface Repository<T> {
+  findById(id: string): Promise<T | null>
+  findAll(): Promise<T[]>
+  create(data: Omit<T, 'id'>): Promise<T>
+  update(id: string, data: Partial<T>): Promise<T>
+  delete(id: string): Promise<void>
+}
+
+// Incorrect - too many type params, unclear roles
+interface ApiHandler<Req, Res, Err, Ctx, Opts> {
+  handle(req: Req, ctx: Ctx): Promise<Res | Err>
+  configure(opts: Opts): void
+}
+```
+
+### Constrain Generics When Needed
+
+Add constraints for better autocomplete and error messages.
+
+```tsx
+// Correct - constrained generic
+interface Identifiable {
+  id: string
+}
+
+interface Cache<T extends Identifiable> {
+  get(id: string): T | undefined
+  set(item: T): void
+  remove(id: string): void
+}
+
+// Incorrect - unconstrained, no autocomplete on id
+interface Cache<T> {
+  get(id: string): T | undefined
+  set(item: T): void
+}
+```
+
+---
+
+## Discriminated Unions
+
+### Use Discriminated Unions for Variant Shapes
+
+When an interface can represent multiple shapes, use a discriminant field.
+
+```tsx
+// Correct - discriminated union
+type RequestState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: string }
+
+// Correct - API response variants
+type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: ApiError }
+
+// Incorrect - nullable fields everywhere
+interface RequestState<T> {
+  status: 'idle' | 'loading' | 'success' | 'error'
+  data?: T
+  error?: string
+}
+```
+
+### Exhaustive Switch Handling
+
+TypeScript narrows discriminated unions in switch statements -- use this for safety.
+
+```tsx
+function renderState(state: RequestState<User>) {
+  switch (state.status) {
+    case 'idle':
+      return <IdleScreen />
+    case 'loading':
+      return <LoadingSpinner />
+    case 'success':
+      return <UserProfile user={state.data} />
+    case 'error':
+      return <ErrorMessage message={state.error} />
+  }
+}
+```
+
+---
+
+## Interface for Function Props
+
+### Typing Callback Signatures
+
+Use interface properties for functions, not standalone function types.
+
+```tsx
+// Correct - interface property
+interface EventHandlers {
+  onSubmit: (data: FormData) => Promise<void>
+  onCancel: () => void
+  onError: (error: Error) => void
+}
+
+// Acceptable - type alias for complex signatures
+type AsyncEventHandler<T, R = void> = (data: T) => Promise<R>
+```
+
+---
+
+## Common Mistakes
+
+- **any everywhere** - always use specific types or unknown
+- **Missing generics** - resorting to any instead of `<T>` for flexible types
+- **Overly nested interfaces** - interfaces 5+ levels deep that are impossible to navigate
+- **Nullable field unions** - instead of discriminated unions with narrow types
+- **Deep inheritance chains** - 3+ levels making refactoring painful
+- **Not using readonly** - mutable fields that should be immutable after creation
+- **Inconsistent naming** - mixing PascalCase and camelCase for type names
+
+---
+
+## AI Coding Prompt Example
+
+```
+When designing TypeScript interfaces in this project:
+- Use PascalCase with domain context (UserProfile, CreateUserOptions)
+- Prefer interface for object shapes, type for unions/primitives/tuples
+- List required properties first, optional after, methods last
+- Use readonly for immutable properties (ids, timestamps)
+- Keep inheritance shallow -- one level deep, use intersection for mixing
+- Use discriminated unions for variant shapes with a 'status' or 'type' field
+- Constrain generics with extends for better autocomplete
+- Never use 'any' -- use unknown for dynamic data and generics for flexibility
+- Prefer flat property structures over nested objects
+```
+
+---
+
+## Best Practices Summary
+
+- PascalCase naming with domain context
+- Interface for objects, type for unions/primitives
+- Required properties first, optional after
+- Readonly for immutable properties
+- Shallow extension, intersection for mixing concerns
+- Discriminated unions over nullable fields
+- Constrained generics with meaningful names
+- Never use any -- unknown or generics instead
