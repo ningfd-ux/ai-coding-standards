@@ -1,0 +1,412 @@
+---
+title: AI Readable Hook Patterns
+description: Custom React hook patterns optimized for AI coding tools to understand, generate, and compose hooks reliably with minimal context.
+tags:
+  - AI Coding
+  - React
+  - Hooks
+featured: true
+publishedAt: 2026-06-15
+---
+
+# AI Readable Hook Patterns
+
+AI coding tools excel at generating hooks when they follow predictable patterns. Hooks structured with clear inputs, outputs, and naming conventions produce dramatically better AI-generated code than ad-hoc patterns.
+
+---
+
+## Why AI Readable Hooks Matter
+
+AI tools struggle with hooks that:
+
+- Have unclear return types or inconsistent return shapes
+- Mix side effects with pure computation without clear boundaries
+- Depend on implicit global state that the AI cannot see
+- Use ambiguous naming that fails to signal intent
+- Contain deeply nested callbacks that are hard to trace
+
+Predictable hook patterns let AI tools generate correct, composable, and safe hooks on the first attempt.
+
+---
+
+## The Predictable Hook Template
+
+Every custom hook should follow this structure:
+
+```ts
+// 1. Type definitions (inputs and outputs)
+interface UseSearchOptions {
+  debounceMs?: number
+  minQueryLength?: number
+}
+
+interface UseSearchResult {
+  results: SearchItem[]
+  isLoading: boolean
+  error: Error | null
+  search: (query: string) => void
+  clearResults: () => void
+}
+
+// 2. Hook function with descriptive name
+export function useSearch(
+  fetcher: (query: string) => Promise<SearchItem[]>,
+  options: UseSearchOptions = {}
+): UseSearchResult {
+  // 3. Destructure options with defaults
+  const { debounceMs = 300, minQueryLength = 2 } = options
+
+  // 4. State declarations — grouped by purpose
+  const [results, setResults] = useState<SearchItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  // 5. Side effects — one concern per useEffect
+  const debouncedQuery = useDebounce(query, debounceMs)
+
+  useEffect(() => {
+    if (debouncedQuery.length < minQueryLength) {
+      setResults([])
+      return
+    }
+
+    let cancelled = false
+    setIsLoading(true)
+    setError(null)
+
+    fetcher(debouncedQuery)
+      .then(data => { if (!cancelled) setResults(data) })
+      .catch(err => { if (!cancelled) setError(err) })
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
+    return () => { cancelled = true }
+  }, [debouncedQuery, minQueryLength, fetcher])
+
+  // 6. Action functions — named for what they do
+  const search = useCallback((query: string) => {
+    // triggers the debounced query update
+  }, [])
+
+  const clearResults = useCallback(() => {
+    setResults([])
+    setError(null)
+  }, [])
+
+  // 7. Return object — named keys, consistent shape
+  return { results, isLoading, error, search, clearResults }
+}
+```
+
+---
+
+## Hook Return Patterns
+
+### Return Objects, Not Arrays
+
+Objects are self-documenting for AI tools. Arrays require position memory.
+
+```ts
+// Correct — named return object
+const { data, isLoading, error, refetch } = useUsers(teamId)
+
+// Incorrect — array return requires remembering position
+const [data, isLoading, error, refetch] = useUsers(teamId)
+```
+
+### Consistent Return Shape Across Hooks
+
+All data-fetching hooks in your project should return the same shape.
+
+```ts
+// Standard data-fetching return type
+interface AsyncState<T> {
+  data: T | null
+  isLoading: boolean
+  error: Error | null
+  refetch: () => void
+}
+
+function useUsers(teamId: string): AsyncState<User[]> { ... }
+function usePosts(authorId: string): AsyncState<Post[]> { ... }
+function useComments(postId: string): AsyncState<Comment[]> { ... }
+```
+
+This consistency lets AI tools predict the return shape of any data hook in the project.
+
+---
+
+## Hook Input Patterns
+
+### Options Object Over Positional Args
+
+Options objects are self-documenting and extensible.
+
+```ts
+// Correct — options object
+function usePagination<T>({
+  items,
+  pageSize = 20,
+  initialPage = 1,
+  sortFn,
+}: UsePaginationOptions<T>): UsePaginationResult<T> { ... }
+
+// Incorrect — positional args are opaque
+function usePagination<T>(
+  items: T[],
+  pageSize: number,
+  initialPage: number,
+  sortFn?: (a: T, b: T) => number
+) { ... }
+```
+
+### Explicit Dependency Injection
+
+Pass dependencies as arguments so AI tools can see the full dependency graph.
+
+```ts
+// Correct — explicit dependencies
+function useAuth(apiClient: ApiClient, storage: StorageAdapter) { ... }
+
+// Incorrect — hidden imports that AI cannot trace
+import { apiClient } from '@/lib/api' // hidden dependency
+import { storage } from '@/lib/storage' // hidden dependency
+function useAuth() { ... }
+```
+
+---
+
+## Effect Organization for AI
+
+### One Effect, One Concern
+
+```ts
+// Correct — separate effects for separate concerns
+useEffect(() => {
+  // Concern 1: Sync to localStorage
+  localStorage.setItem('theme', theme)
+}, [theme])
+
+useEffect(() => {
+  // Concern 2: Apply CSS class
+  document.documentElement.className = theme
+}, [theme])
+
+// Incorrect — mixing concerns
+useEffect(() => {
+  localStorage.setItem('theme', theme)
+  document.documentElement.className = theme
+  trackEvent('theme_change', { theme })
+  updateServerPreference(theme)
+}, [theme])
+```
+
+### Cleanup Is Mandatory
+
+```ts
+// Correct — always clean up subscriptions
+useEffect(() => {
+  const controller = new AbortController()
+
+  fetchData(userId, controller.signal)
+    .then(setData)
+    .catch(err => {
+      if (err.name !== 'AbortError') setError(err)
+    })
+
+  return () => controller.abort()
+}, [userId])
+
+// Incorrect — no cleanup, potential memory leak
+useEffect(() => {
+  fetchData(userId).then(setData)
+}, [userId])
+```
+
+---
+
+## Composing Hooks for AI
+
+### Layer Hooks Predictably
+
+AI tools understand hook composition best when it follows a clear layering order.
+
+```ts
+function useUserDashboard(userId: string) {
+  // Layer 1: Data fetching
+  const { data: user, isLoading: userLoading } = useUser(userId)
+  const { data: activity, isLoading: activityLoading } = useUserActivity(userId)
+
+  // Layer 2: Derived state
+  const recentActivity = useMemo(
+    () => activity?.filter(a => isRecent(a.date)) ?? [],
+    [activity]
+  )
+
+  // Layer 3: UI state
+  const [selectedView, setSelectedView] = useState<'grid' | 'list'>('grid')
+
+  // Layer 4: Computed values
+  const isLoading = userLoading || activityLoading
+  const hasActivity = recentActivity.length > 0
+
+  return {
+    user,
+    recentActivity,
+    selectedView,
+    setSelectedView,
+    isLoading,
+    hasActivity,
+  }
+}
+```
+
+### Refrain from Nesting Hooks Conditionally
+
+```ts
+// Correct — hooks at the top level
+function useFeature(experiment: string) {
+  const isEnabled = useExperimentFlag(experiment)
+  const { data } = useFeatureData(experiment, { enabled: isEnabled })
+
+  return { isEnabled, data }
+}
+
+// Incorrect — conditional hook calls break the Rules of Hooks
+function useFeature(experiment: string) {
+  const isEnabled = useExperimentFlag(experiment)
+  if (isEnabled) {
+    const { data } = useFeatureData(experiment) // Rule violation!
+    return { data }
+  }
+  return { data: null }
+}
+```
+
+---
+
+## Naming Conventions for AI
+
+### Boolean Returns Use "is" or "has" Prefix
+
+```ts
+// Correct — boolean return names signal intent
+function useIsOnline(): boolean { ... }
+function useHasPermission(scope: string): boolean { ... }
+function useIsMobile(): boolean { ... }
+function useHasFeature(flag: string): boolean { ... }
+
+// Incorrect — ambiguous names
+function useOnline(): boolean { ... }
+function usePermission(scope: string): boolean { ... }
+```
+
+### Action Functions Use Verbs
+
+```ts
+// Correct — action names start with verbs
+const { toggle, open, close, select, reset, submit } = useModal()
+
+// Incorrect — non-verb names obscure intent
+const { isOpen, modalOpen, modalClose } = useModal()
+```
+
+---
+
+## AI-Friendly Hook Documentation
+
+### JSDoc on Every Custom Hook
+
+AI tools use JSDoc to understand hook purpose and constraints.
+
+```ts
+/**
+ * Tracks whether a media query matches the current viewport.
+ *
+ * @param query - CSS media query string, e.g. '(min-width: 768px)'
+ * @returns Whether the media query currently matches
+ *
+ * @example
+ * const isDesktop = useMediaQuery('(min-width: 1024px)')
+ */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false)
+
+  useEffect(() => {
+    const mql = window.matchMedia(query)
+    setMatches(mql.matches)
+
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [query])
+
+  return matches
+}
+```
+
+### Document Edge Cases
+
+```ts
+/**
+ * Debounces a value by the specified delay.
+ *
+ * @param value - The value to debounce
+ * @param delay - Delay in milliseconds
+ * @returns The debounced value
+ *
+ * Note: The debounced value only updates after the delay
+ * has elapsed since the last change. Initial value is returned
+ * immediately on first render.
+ */
+export function useDebounce<T>(value: T, delay: number): T { ... }
+```
+
+---
+
+## Common Mistakes
+
+- **Returning arrays instead of objects** — arrays are position-dependent and hard for AI to map to meaning. Objects with named keys are self-documenting
+- **Mixing multiple concerns in one useEffect** — split effects by concern so AI can reason about each independently
+- **Missing cleanup functions** — AI tools frequently forget to clean up subscriptions, intervals, and event listeners. Always model cleanup in your patterns
+- **Conditional hook calls** — violates the Rules of Hooks and confuses AI tools that assume top-level hook ordering
+- **Implicit dependencies** — importing services inside the hook file hides dependencies from AI. Pass them as arguments
+- **Generic catch-all hooks** — `useForm()` that handles validation, submission, file uploads, and analytics is unreadable. Compose smaller hooks
+- **No return type annotation** — AI tools rely on explicit return types to understand what a hook produces. Always annotate return types
+- **Inconsistent boolean naming** — pick `is` or `has` prefix for boolean returns and enforce it project-wide
+
+---
+
+## AI Coding Prompt Example
+
+```
+When generating custom React hooks in this project:
+- Return objects with named keys, never arrays — the shape should be self-documenting
+- Use a consistent return shape for data-fetching hooks: { data, isLoading, error, refetch }
+- Accept options as a single object parameter, not positional arguments
+- Pass external dependencies (API clients, storage) as arguments — never import them inside the hook
+- Split effects by concern — one useEffect per logical operation
+- Always include cleanup functions for subscriptions, intervals, and event listeners
+- Prefix boolean returns with "is" or "has" (useIsOnline, useHasPermission)
+- Name action functions with verbs (toggle, open, close, select, reset)
+- Add JSDoc with @param, @returns, and @example to every custom hook
+- Annotate all return types explicitly — never rely on type inference for the return value
+- Layer hooks predictably: data fetching → derived state → UI state → computed values
+- Never call hooks conditionally — restructure to keep all hook calls at the top level
+```
+
+---
+
+## Best Practices Summary
+
+- Return objects with named keys, not arrays — position-independent and AI-friendly
+- Use consistent return shapes across similar hook categories
+- Accept configuration as an options object, not positional arguments
+- Pass dependencies explicitly as arguments
+- Split effects by logical concern — one concern per useEffect
+- Always provide cleanup for subscriptions, intervals, listeners
+- Use `is`/`has` prefix for boolean return values
+- Name action functions with descriptive verbs
+- Document every hook with JSDoc (@param, @returns, @example)
+- Explicitly annotate return types — never rely on inference
+- Compose hooks in predictable layers — no conditional hook calls
+- Export one hook per file — co-locate tests with `.test.ts` suffix

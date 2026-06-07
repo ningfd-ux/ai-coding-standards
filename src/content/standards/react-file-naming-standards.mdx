@@ -1,0 +1,326 @@
+---
+title: React File Naming Standards
+description: Consistent file naming conventions for React components, hooks, utilities, and test files to improve project navigation and AI code generation accuracy.
+tags:
+  - React
+  - Naming
+  - Best Practices
+featured: true
+publishedAt: 2026-06-15
+---
+
+# React File Naming Standards
+
+Consistent file naming is the foundation of maintainable React projects. When AI coding tools and developers can predict file names and locations, code generation becomes faster and more accurate.
+
+---
+
+## Why File Naming Matters
+
+Inconsistent file naming causes:
+
+- AI tools generating imports with wrong paths or file names
+- Wasted developer time searching for components
+- Confusion between different file types (component vs. test vs. style)
+- Broken barrel exports when files are renamed or moved
+- Merge conflicts from casing inconsistencies (especially on case-insensitive filesystems)
+
+A clear naming convention eliminates these problems before they start.
+
+---
+
+## Component File Naming
+
+### Use PascalCase for Component Files
+
+Component files should match the component name exactly.
+
+`
+// Correct
+components/
+├── UserProfile.tsx
+├── ProductCard.tsx
+├── ShoppingCart.tsx
+└── NavigationMenu.tsx
+
+// Incorrect
+components/
+├── user-profile.tsx      // kebab-case breaks React conventions
+├── productcard.tsx       // lowercase loses visual distinction
+├── Shopping_cart.tsx     // snake_case is not idiomatic
+└── Navigation-Menu.tsx   // mixed casing causes confusion
+`
+
+### Component File = Component Name
+
+The file name and exported component name must match.
+
+`	sx
+// UserProfile.tsx
+export function UserProfile({ userId }: UserProfileProps) {
+  return <div>Profile for {userId}</div>
+}
+
+// ProductCard.tsx
+export function ProductCard({ product }: ProductCardProps) {
+  return <div>{product.name}</div>
+}
+`
+
+### Index Files for Public API
+
+Use index.ts files to define the public API of a component directory.
+
+`
+components/
+└── Button/
+    ├── Button.tsx
+    ├── Button.test.tsx
+    ├── Button.module.css
+    └── index.ts
+`
+
+`	s
+// index.ts
+export { Button } from './Button'
+export type { ButtonProps, ButtonVariant } from './Button'
+`
+
+---
+
+## Hook File Naming
+
+### Use camelCase with use Prefix
+
+Hook files follow the same naming as hook functions.
+
+`
+// Correct
+hooks/
+├── useAuth.ts
+├── useDebounce.ts
+├── useMediaQuery.ts
+├── useLocalStorage.ts
+└── useFormValidation.ts
+
+// Incorrect
+hooks/
+├── Auth.ts            // missing use prefix
+├── use-auth.ts        // kebab-case is not idiomatic
+├── UseDebounce.ts     // PascalCase breaks import convention
+└── debounce.ts        // looks like a utility, not a hook
+`
+
+### Co-locate Hook Tests
+
+`
+hooks/
+└── auth/
+    ├── useAuth.ts
+    └── useAuth.test.ts
+`
+
+---
+
+## Utility and Helper File Naming
+
+### Use camelCase for Utility Files
+
+Utility files should describe their purpose concisely.
+
+`
+// Correct
+lib/
+├── formatDate.ts
+├── validateEmail.ts
+├── truncateText.ts
+└── calculateDiscount.ts
+
+// Incorrect
+lib/
+├── date-utils.ts      // too generic
+├── helpers.ts         // catch-all file, impossible to navigate
+├── FormatDate.ts      // PascalCase reserved for components
+└── validate_email.ts  // snake_case is not idiomatic
+`
+
+### Constants in Separate Files
+
+`
+constants/
+├── apiRoutes.ts
+├── breakpoints.ts
+├── themeColors.ts
+└── validationRules.ts
+`
+
+---
+
+## Type Definition File Naming
+
+### Use PascalCase for Type Files
+
+Type files follow the types they define.
+
+`
+// Correct
+types/
+├── User.ts
+├── Product.ts
+├── Order.ts
+└── ApiResponse.ts
+
+// Incorrect
+types/
+├── user.types.ts      // redundant suffix
+├── types.ts           // catch-all, unmaintainable
+└── user-types.d.ts    // mixing .d.ts conventions
+`
+
+### Module-Level Types
+
+For types shared within a module, use a 	ypes.ts file.
+
+`
+features/
+└── checkout/
+    ├── CheckoutForm.tsx
+    ├── useCheckout.ts
+    ├── types.ts          // CheckoutFormProps, PaymentMethod, etc.
+    └── index.ts
+`
+
+---
+
+## Test File Naming
+
+### Co-locate Tests with Implementation
+
+`
+// Correct — tests next to source
+
+components/
+└── UserCard/
+    ├── UserCard.tsx
+    └── UserCard.test.tsx
+
+hooks/
+└── auth/
+    ├── useAuth.ts
+    └── useAuth.test.ts
+
+lib/
+├── formatDate.ts
+└── formatDate.test.ts
+
+// Incorrect — separate test directory
+__tests__/
+└── UserCard.test.tsx    // far from source, harder to maintain
+`
+
+### Consistent Test Suffix
+
+Always use .test.ts or .test.tsx. Do not mix .spec.ts and .test.ts in the same project.
+
+---
+
+## Directory Naming
+
+### Domain-Based Grouping
+
+`
+// Correct — grouped by feature domain
+features/
+├── auth/
+├── checkout/
+├── products/
+└── user/
+
+components/
+├── ui/           // shared UI primitives
+├── forms/        // form components
+└── layout/       // layout components
+
+// Incorrect — flat structure
+components/
+├── Button.tsx
+├── CheckoutForm.tsx
+├── UserProfile.tsx
+├── ProductCard.tsx
+└── NavigationMenu.tsx    // 50+ files in one folder
+`
+
+### Feature vs. Page-Level Organization
+
+For app router / page-based frameworks:
+
+`
+src/
+├── features/        // domain logic, reusable across pages
+│   ├── auth/
+│   └── search/
+├── app/             // page-level components (framework-specific)
+│   ├── dashboard/
+│   └── settings/
+└── components/      // shared UI
+    ├── ui/
+    └── layout/
+`
+
+---
+
+## Casing Rules Summary
+
+| File Type | Casing | Example |
+|-----------|--------|---------|
+| Components | PascalCase | UserProfile.tsx |
+| Hooks | camelCase (use prefix) | useAuth.ts |
+| Utilities | camelCase | ormatDate.ts |
+| Types | PascalCase | User.ts |
+| Constants | camelCase | piRoutes.ts |
+| Tests | <source>.test.ts(x) | UserProfile.test.tsx |
+| Styles | <source>.module.css | UserProfile.module.css |
+| Directories | camelCase or kebab-case | userProfile/ or user-profile/ |
+
+---
+
+## Common Mistakes
+
+- **Mixing kebab-case and PascalCase in the same project** — pick one convention and enforce it with ESLint (@typescript-eslint/naming-convention works for imports, not file names; use eslint-plugin-unicorn for file name rules)
+- **Generic names like helpers.ts and utils.ts** — these become dumping grounds. Use specific names: ormatCurrency.ts, parseQueryString.ts
+- **Inconsistent test file naming** — stick to .test.ts(x) throughout the project
+- **Using index.tsx as the component file** — component code belongs in a named file; index.ts should only re-export
+- **Catch-all type files** — 	ypes/index.ts with 500 interfaces is unmaintainable. Split by domain
+- **Ignoring case sensitivity** — macOS and Linux are case-sensitive; UserProfile.tsx and userProfile.tsx are different files. Inconsistent casing breaks CI and collaboration
+- **No directory structure rules** — flat folders with 30+ files create navigation chaos for both humans and AI tools
+
+---
+
+## AI Coding Prompt Example
+
+`
+When generating files in this React project:
+- Component files use PascalCase and match the exported component name exactly (e.g., UserProfile.tsx exports UserProfile)
+- Hook files use camelCase with use prefix (e.g., useDebounce.ts)
+- Utility files use camelCase describing their purpose (e.g., formatCurrency.ts)
+- Type definition files use PascalCase matching the primary type (e.g., Order.ts)
+- Tests are co-located with their source file and use .test.ts(x) suffix
+- Index files (index.ts) only re-export; never contain implementation code
+- Directories use camelCase and group by feature domain
+- Never create generic files like helpers.ts, utils.ts, or types/index.ts — be specific
+- Follow the existing project convention if it differs from the above — consistency over preference
+`
+
+---
+
+## Best Practices Summary
+
+- Use PascalCase for component and type files, camelCase for hooks and utilities
+- Component file name must match the exported component name
+- Co-locate tests with source files using .test.ts(x) suffix
+- Use index.ts files only for re-exports, never for implementation
+- Group files by feature domain, not by file type
+- Avoid generic catch-all files (helpers.ts, utils.ts)
+- Use consistent casing — enforce with linting rules
+- Keep directory depth reasonable — aim for 3-4 levels maximum
+- Name files for what they contain, not what they relate to

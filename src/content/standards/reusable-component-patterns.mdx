@@ -1,0 +1,414 @@
+---
+title: Reusable Component Patterns
+description: Production-ready patterns for building reusable React components including composition, render props, slots, polymorphic types, and compound components.
+tags:
+  - React
+  - Components
+  - Patterns
+featured: true
+publishedAt: 2026-06-15
+---
+
+# Reusable Component Patterns
+
+Reusable components are the backbone of scalable React applications. The right patterns let you build once and use everywhere — without accumulating technical debt from copy-pasted code.
+
+---
+
+## Why Reusable Components Matter
+
+Without reusable component patterns:
+
+- Teams duplicate identical UI logic across features, multiplying maintenance costs
+- Design inconsistencies creep in as each developer builds their own version
+- Bug fixes require touching dozens of files instead of one shared component
+- AI tools generate redundant components instead of reusing existing ones
+- Onboarding slows down — new developers rebuild instead of reusing
+
+A shared library of well-designed reusable components accelerates development and keeps your UI consistent.
+
+---
+
+## The Composition Pattern
+
+Composition is the most fundamental React pattern. Pass children and use props to customize behavior.
+
+```tsx
+interface CardProps {
+  title: string
+  children: React.ReactNode
+  footer?: React.ReactNode
+  variant?: 'default' | 'elevated' | 'outlined'
+}
+
+function Card({ title, children, footer, variant = 'default' }: CardProps) {
+  const variantStyles = {
+    default: 'bg-white border',
+    elevated: 'bg-white shadow-lg',
+    outlined: 'bg-transparent border-2',
+  }
+
+  return (
+    <div className={variantStyles[variant]}>
+      <div className="p-4 border-b">
+        <h2>{title}</h2>
+      </div>
+      <div className="p-4">{children}</div>
+      {footer && <div className="p-4 border-t">{footer}</div>}
+    </div>
+  )
+}
+```
+
+Usage:
+
+```tsx
+<Card
+  title="User Profile"
+  footer={<Button>Save Changes</Button>}
+  variant="elevated"
+>
+  <UserForm />
+</Card>
+```
+
+---
+
+## The Compound Component Pattern
+
+Compound components give users full control over layout while maintaining internal state and accessibility.
+
+```tsx
+interface TabsContextValue {
+  activeTab: string
+  setActiveTab: (tab: string) => void
+}
+
+const TabsContext = createContext<TabsContextValue | null>(null)
+
+function Tabs({ children, defaultTab }: { children: React.ReactNode; defaultTab: string }) {
+  const [activeTab, setActiveTab] = useState(defaultTab)
+
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <div role="tablist">{children}</div>
+    </TabsContext.Provider>
+  )
+}
+
+function TabList({ children }: { children: React.ReactNode }) {
+  return <div className="flex border-b">{children}</div>
+}
+
+function Tab({ id, children }: { id: string; children: React.ReactNode }) {
+  const ctx = useContext(TabsContext)
+  if (!ctx) throw new Error('Tab must be inside Tabs')
+
+  return (
+    <button
+      role="tab"
+      aria-selected={ctx.activeTab === id}
+      className={ctx.activeTab === id ? 'border-b-2 border-blue-500' : ''}
+      onClick={() => ctx.setActiveTab(id)}
+    >
+      {children}
+    </button>
+  )
+}
+
+function TabPanel({ id, children }: { id: string; children: React.ReactNode }) {
+  const ctx = useContext(TabsContext)
+  if (!ctx) throw new Error('TabPanel must be inside Tabs')
+
+  if (ctx.activeTab !== id) return null
+  return <div role="tabpanel">{children}</div>
+}
+
+// Attach sub-components
+Tabs.List = TabList
+Tabs.Tab = Tab
+Tabs.Panel = TabPanel
+```
+
+Usage:
+
+```tsx
+<Tabs defaultTab="account">
+  <Tabs.List>
+    <Tabs.Tab id="account">Account</Tabs.Tab>
+    <Tabs.Tab id="billing">Billing</Tabs.Tab>
+  </Tabs.List>
+  <Tabs.Panel id="account"><AccountSettings /></Tabs.Panel>
+  <Tabs.Panel id="billing"><BillingInfo /></Tabs.Panel>
+</Tabs>
+```
+
+---
+
+## The Polymorphic Component Pattern
+
+Polymorphic components let users change the rendered HTML element while preserving TypeScript safety.
+
+```tsx
+type BoxProps<T extends ElementType = 'div'> = {
+  as?: T
+  children: React.ReactNode
+} & ComponentPropsWithoutRef<T>
+
+function Box<T extends ElementType = 'div'>({
+  as,
+  children,
+  ...rest
+}: BoxProps<T>) {
+  const Component = as ?? 'div'
+  return <Component {...rest}>{children}</Component>
+}
+```
+
+Usage:
+
+```tsx
+<Box as="section" aria-label="Main content">
+  <Box as="article">
+    <Box as="h1" className="text-2xl font-bold">Title</Box>
+  </Box>
+</Box>
+```
+
+### With Forwarded Refs
+
+```tsx
+const Button = forwardRef(function Button<T extends ElementType = 'button'>(
+  { as, variant = 'primary', className, ...rest }: ButtonProps<T>,
+  ref: ComponentPropsWithRef<T>['ref']
+) {
+  const Component = as ?? 'button'
+  const variantClasses = {
+    primary: 'bg-blue-500 text-white hover:bg-blue-600',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+    ghost: 'bg-transparent hover:bg-gray-100',
+  }
+
+  return (
+    <Component
+      ref={ref}
+      className={`px-4 py-2 rounded ${variantClasses[variant]} ${className ?? ''}`}
+      {...rest}
+    />
+  )
+})
+```
+
+Usage:
+
+```tsx
+<Button variant="primary" onClick={handleSave}>Save</Button>
+<Button as="a" href="/settings" variant="ghost">Settings</Button>
+```
+
+---
+
+## The Render Props Pattern
+
+Render props expose internal state to consumers for maximum flexibility.
+
+```tsx
+interface ToggleProps {
+  defaultOn?: boolean
+  children: (state: { on: boolean; toggle: () => void }) => React.ReactNode
+}
+
+function Toggle({ defaultOn = false, children }: ToggleProps) {
+  const [on, setOn] = useState(defaultOn)
+  const toggle = useCallback(() => setOn(prev => !prev), [])
+
+  return <>{children({ on, toggle })}</>
+}
+```
+
+Usage:
+
+```tsx
+<Toggle>
+  {({ on, toggle }) => (
+    <div>
+      <button onClick={toggle}>{on ? 'ON' : 'OFF'}</button>
+      {on && <ExpensivePanel />}
+    </div>
+  )}
+</Toggle>
+```
+
+### When to Use Render Props vs. Hooks
+
+| Pattern | Best For |
+|---------|----------|
+| Custom Hook | Reusing state logic across components |
+| Render Props | Sharing state + rendering logic; maximum UI flexibility |
+| Compound Components | Complex UI with internal state + user-controlled layout |
+
+---
+
+## The Slot Pattern
+
+Named slots provide clear APIs for complex layouts — more explicit than children alone.
+
+```tsx
+interface PageLayoutProps {
+  header: React.ReactNode
+  sidebar: React.ReactNode
+  children: React.ReactNode
+  footer?: React.ReactNode
+}
+
+function PageLayout({ header, sidebar, children, footer }: PageLayoutProps) {
+  return (
+    <div className="min-h-screen grid grid-cols-[250px_1fr] grid-rows-[auto_1fr_auto]">
+      <header className="col-span-2">{header}</header>
+      <aside>{sidebar}</aside>
+      <main>{children}</main>
+      {footer && <footer className="col-span-2">{footer}</footer>}
+    </div>
+  )
+}
+```
+
+Usage:
+
+```tsx
+<PageLayout
+  header={<TopNav />}
+  sidebar={<SideMenu />}
+  footer={<AppFooter />}
+>
+  <Outlet />
+</PageLayout>
+```
+
+---
+
+## Extracting Reusable Logic
+
+### From Duplicate Code to Shared Component
+
+Step 1 — Identify the duplication:
+
+```tsx
+// Feature A
+<div className="p-4 border rounded">
+  <img src={avatarA} className="w-8 h-8 rounded-full" />
+  <p className="text-sm text-gray-600">{nameA}</p>
+</div>
+
+// Feature B
+<div className="p-4 border rounded">
+  <img src={avatarB} className="w-8 h-8 rounded-full" />
+  <p className="text-sm text-gray-600">{nameB}</p>
+</div>
+```
+
+Step 2 — Extract the shared pattern:
+
+```tsx
+interface AvatarCardProps {
+  src: string
+  name: string
+}
+
+function AvatarCard({ src, name }: AvatarCardProps) {
+  return (
+    <div className="p-4 border rounded">
+      <img src={src} alt={name} className="w-8 h-8 rounded-full" />
+      <p className="text-sm text-gray-600">{name}</p>
+    </div>
+  )
+}
+```
+
+---
+
+## Prop Design Principles
+
+### Avoid Boolean Overload
+
+```tsx
+// Incorrect — boolean explosion
+<Button primary large rounded disabled>
+  Submit
+</Button>
+
+// Correct — use a variant prop
+<Button variant="primary" size="lg" shape="rounded" disabled>
+  Submit
+</Button>
+```
+
+### Use Discriminated Unions for Mutually Exclusive Props
+
+```tsx
+// Correct — TypeScript prevents invalid combinations
+type AlertProps =
+  | { variant: 'info'; onDismiss?: never }
+  | { variant: 'dismissible'; onDismiss: () => void }
+
+// TypeScript errors on invalid usage:
+// <Alert variant="info" onDismiss={handleClose} /> // Error!
+```
+
+### Provide Sensible Defaults
+
+```tsx
+function Spinner({
+  size = 'md',
+  color = 'currentColor',
+  speed = 1000,
+}: SpinnerProps) {
+  // size defaults to medium, color inherits from parent
+}
+```
+
+---
+
+## Common Mistakes
+
+- **Creating components that are too generic** — a `<Box>` that accepts 50 props is not reusable, it is confusing. Aim for focused components that do one thing well
+- **Boolean prop overload** — more than 2 booleans on a component signals it needs a variant or size pattern
+- **Missing TypeScript generic constraints** — polymorphic components without proper types lose all autocomplete
+- **Exposing internal state without encapsulation** — compound components should manage their own state; force consumers to use the sub-components
+- **Prop drilling in reusable components** — use Context internally within compound patterns instead of passing state through every level
+- **No forwardRef support** — reusable UI components should always forward refs for accessibility and animation libraries
+- **Inconsistent prop naming across similar components** — `onChange` vs `onSelect` vs `onValueChange` — pick one and stick with it
+- **Over-engineering before duplication exists** — follow the Rule of Three: extract on the third occurrence, not the second
+
+---
+
+## AI Coding Prompt Example
+
+```
+When building reusable React components in this project:
+- Use composition (children + props) as the default pattern — it is the most flexible and idiomatic
+- Use compound components (Context + static sub-components) for complex UI with internal state (Tabs, Accordion, Select, Dropdown)
+- Use the polymorphic pattern (as prop + ElementType generic) when users need to change the rendered HTML element
+- Use named slots (explicit ReactNode props) for layout components with fixed regions (PageLayout, DashboardShell)
+- Always forward refs in reusable UI components
+- Use discriminated unions for mutually exclusive prop combinations
+- Replace boolean overload (3+ booleans) with variant/size/shape pattern
+- Provide sensible defaults for all optional props
+- Extract into a shared component only after the third occurrence of duplication
+- Keep component APIs narrow — a component that does one thing well is more reusable than one that does everything
+```
+
+---
+
+## Best Practices Summary
+
+- Default to composition — it is the simplest and most flexible pattern
+- Use compound components for complex interactive UI (tabs, accordions, dropdowns)
+- Use polymorphic types when the rendered element needs to be configurable
+- Forward refs on all reusable UI components
+- Replace boolean props with variant/size/shape enums after 2+ booleans
+- Use discriminated unions for mutually exclusive props
+- Extract shared components after the third duplication, not the second
+- Apply consistent prop naming across your component library
+- Document compound component APIs with usage examples
+- Test reusable components in isolation before integrating
